@@ -1,0 +1,18 @@
+[package]
+name = "prometheus-push"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mathias Oertel <mathias.oertel@pm.me>"]
+
+[package.metadata.docs.rs]
+features = ["with_reqwest"]
+
+[dependencies]
+async-trait = "0.1"
+prometheus = "0.13"
+reqwest = { version = "0.11", default-features = false, optional = true }
+log = { version = "0.4", default-features = false, optional = true }
+
+[features]
+default = ["with_reqwest"]
+with_reqwest = ["reqwest", "log"]

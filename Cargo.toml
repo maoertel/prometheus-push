@@ -3,6 +3,11 @@ name = "prometheus-push"
 version = "0.1.0"
 edition = "2021"
 authors = ["Mathias Oertel <mathias.oertel@pm.me>"]
+description = "Crate to extends the prometheus crate with async pushgateway support"
+readme = "README.md"
+keywords = ["metrics", "oberservability"]
+license = "MIT"
+repository = "https://github.com/maoertel/prometheus-push"
 
 [package.metadata.docs.rs]
 features = ["with_reqwest"]

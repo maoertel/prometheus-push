@@ -1,7 +1,8 @@
 # Prometheus async push
 
 This crate works as an extension to the [prometheus](https://crates.io/crates/prometheus) crate to be able to push non-blocking to your
-Prometheus push gateway and with a less dependent setup of `reqwest` (no `openssl` for example).
+Prometheus push gateway and with a less dependent setup of `reqwest` (no `openssl` for example). Parts of the logic in this repo were
+taken but rewritten from the blocking `push` feature in the above mentioned `prometheus` crate.
 
 By default you have to implement the `Push` trait to use it with your choice of http client or you can use the `with_request` feature.
 This feature implements `Push` in a `PushClient` that leverages `reqwest` under the hood. Reqwest is setup without default features 
@@ -51,3 +52,7 @@ impl Push for YourClient {
     }
 }
 ```
+
+## License
+
+[MIT](./LICENSE-MIT)

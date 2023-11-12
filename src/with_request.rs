@@ -44,15 +44,15 @@ impl Push for PushClient {
     }
 }
 
-fn handle_response(resonse: &Response) -> Result<()> {
-    match resonse.status() {
+fn handle_response(response: &Response) -> Result<()> {
+    match response.status() {
         StatusCode::ACCEPTED | StatusCode::OK => {
             log::info!("Pushed metrics to the push gateway.");
             Ok(())
         }
         status_code => Err(PushMetricsError::Generic(format!(
             "unexpected status code {status_code} while pushing to {url}",
-            url = resonse.url()
+            url = response.url()
         ))),
     }
 }

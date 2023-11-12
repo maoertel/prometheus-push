@@ -7,6 +7,7 @@ pub type Result<T> = std::result::Result<T, PushMetricsError>;
 pub enum PushMetricsError {
     Prometheus(prometheus::Error),
 
+    #[cfg(feature = "with_reqwest")]
     Reqwest(reqwest::Error),
     Generic(String),
 }
@@ -17,8 +18,9 @@ impl fmt::Display for PushMetricsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             PushMetricsError::Prometheus(e) => std::fmt::Display::fmt(e, f),
-            PushMetricsError::Reqwest(e) => std::fmt::Display::fmt(e, f),
             PushMetricsError::Generic(e) => std::fmt::Display::fmt(e, f),
+            #[cfg(feature = "with_reqwest")]
+            PushMetricsError::Reqwest(e) => std::fmt::Display::fmt(e, f),
         }
     }
 }
@@ -29,6 +31,7 @@ impl From<prometheus::Error> for PushMetricsError {
     }
 }
 
+#[cfg(feature = "with_reqwest")]
 impl From<reqwest::Error> for PushMetricsError {
     fn from(error: reqwest::Error) -> Self {
         PushMetricsError::Reqwest(error)

@@ -11,6 +11,12 @@ pub struct PushClient {
     client: Client,
 }
 
+impl PushClient {
+    pub fn new(client: Client) -> Self {
+        Self { client }
+    }
+}
+
 #[async_trait::async_trait]
 impl Push for PushClient {
     async fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()> {

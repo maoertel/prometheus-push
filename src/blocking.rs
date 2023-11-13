@@ -1,8 +1,4 @@
-#[cfg(feature = "blocking")]
-pub mod blocking;
-pub mod error;
-mod helper;
-#[cfg(feature = "with_reqwest")]
+#[cfg(feature = "with_reqwest_blocking")]
 pub mod with_request;
 
 use std::collections::HashMap;
@@ -11,25 +7,20 @@ use std::hash::BuildHasher;
 use prometheus::core::Collector;
 use prometheus::proto::MetricFamily;
 use prometheus::Encoder;
-#[cfg(feature = "with_reqwest")]
-use reqwest::Client;
+#[cfg(feature = "with_reqwest_blocking")]
+use reqwest::blocking::Client;
 
+use crate::PushType;
+#[cfg(feature = "with_reqwest_blocking")]
+use crate::blocking::with_request::PushClient;
 use crate::error::Result;
 use crate::helper::create;
 use crate::helper::metric_families_from;
 use crate::helper::validate_url;
-#[cfg(feature = "with_reqwest")]
-use crate::with_request::PushClient;
 
-#[async_trait::async_trait]
 pub trait Push {
-    async fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
-    async fn push_add(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
-}
-
-enum PushType {
-    Add,
-    All,
+    fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
+    fn push_add(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
 }
 
 pub struct MetricsPusher<P: Push> {
@@ -43,52 +34,48 @@ impl<P: Push> MetricsPusher<P> {
         Self { push_client, url }
     }
 
-    #[cfg(feature = "with_reqwest")]
+    #[cfg(feature = "with_reqwest_blocking")]
     pub fn from(client: Client, url: &str) -> MetricsPusher<PushClient> {
         MetricsPusher::new(PushClient::new(client), url)
     }
 
-    pub async fn push_all<'a, BH: BuildHasher>(
+    pub fn push_all<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
         metric_families: Vec<MetricFamily>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::All)
-            .await
     }
 
-    pub async fn push_add<'a, BH: BuildHasher>(
+    pub fn push_add<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
         metric_families: Vec<MetricFamily>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::Add)
-            .await
     }
 
-    pub async fn push_all_collectors<'a, BH: BuildHasher>(
+    pub fn push_all_collectors<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
         collectors: Vec<Box<dyn Collector>>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
-            .await
     }
 
-    pub async fn push_add_collectors<'a, BH: BuildHasher>(
+    pub fn push_add_collectors<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
         collectors: Vec<Box<dyn Collector>>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
-            .await
     }
 
-    async fn push_collectors<'a, BH: BuildHasher>(
+    fn push_collectors<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
@@ -96,10 +83,10 @@ impl<P: Push> MetricsPusher<P> {
         push_type: PushType,
     ) -> Result<()> {
         let metric_families = metric_families_from(collectors)?;
-        self.push(job, grouping, metric_families, push_type).await
+        self.push(job, grouping, metric_families, push_type)
     }
 
-    async fn push<'a, BH: BuildHasher>(
+    fn push<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
@@ -112,13 +99,11 @@ impl<P: Push> MetricsPusher<P> {
             PushType::Add => {
                 self.push_client
                     .push_add(&url, encoded_metrics, encoder.format_type())
-                    .await
             }
 
             PushType::All => {
                 self.push_client
                     .push_all(&url, encoded_metrics, encoder.format_type())
-                    .await
             }
         }
     }

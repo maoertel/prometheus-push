@@ -3,9 +3,9 @@ use reqwest::Client;
 use reqwest::Response;
 use reqwest::StatusCode;
 
+use crate::error::PushMetricsError;
 use crate::error::Result;
 use crate::Push;
-use crate::PushMetricsError;
 
 pub struct PushClient {
     client: Client,

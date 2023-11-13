@@ -10,13 +10,13 @@ use prometheus::Encoder;
 #[cfg(feature = "with_reqwest_blocking")]
 use reqwest::blocking::Client;
 
-use crate::PushType;
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
 use crate::error::Result;
 use crate::helper::create;
 use crate::helper::metric_families_from;
 use crate::helper::validate_url;
+use crate::PushType;
 
 pub trait Push {
     fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;

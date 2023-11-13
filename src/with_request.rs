@@ -1,11 +1,11 @@
+use crate::error::Result;
+use crate::helper::handle_response;
+use crate::helper::Respond;
+use crate::Push;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Response;
 use reqwest::StatusCode;
-
-use crate::error::PushMetricsError;
-use crate::error::Result;
-use crate::Push;
 
 pub struct PushClient {
     client: Client,
@@ -44,15 +44,12 @@ impl Push for PushClient {
     }
 }
 
-fn handle_response(response: &Response) -> Result<()> {
-    match response.status() {
-        StatusCode::ACCEPTED | StatusCode::OK => {
-            log::info!("Pushed metrics to the push gateway.");
-            Ok(())
-        }
-        status_code => Err(PushMetricsError::Generic(format!(
-            "unexpected status code {status_code} while pushing to {url}",
-            url = response.url()
-        ))),
+impl Respond for Response {
+    fn get_status_code(&self) -> StatusCode {
+        self.status()
+    }
+
+    fn get_url(&self) -> &reqwest::Url {
+        self.url()
     }
 }

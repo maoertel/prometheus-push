@@ -6,6 +6,8 @@ use prometheus::proto::MetricFamily;
 use prometheus::Encoder;
 use prometheus::ProtobufEncoder;
 use prometheus::Registry;
+#[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
+use reqwest::StatusCode;
 
 use crate::error::PushMetricsError;
 use crate::error::Result;
@@ -112,4 +114,24 @@ fn encode_metrics<'a, BH: BuildHasher>(
     }
 
     Ok(encoded_metrics)
+}
+
+#[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
+pub(crate) trait Respond {
+    fn get_status_code(&self) -> StatusCode;
+    fn get_url(&self) -> &reqwest::Url;
+}
+
+#[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
+pub(crate) fn handle_response<R: Respond>(response: &R) -> Result<()> {
+    match response.get_status_code() {
+        StatusCode::ACCEPTED | StatusCode::OK => {
+            log::info!("Pushed metrics to the push gateway.");
+            Ok(())
+        }
+        status_code => Err(PushMetricsError::Generic(format!(
+            "unexpected status code {status_code} while pushing to {url}",
+            url = response.get_url()
+        ))),
+    }
 }

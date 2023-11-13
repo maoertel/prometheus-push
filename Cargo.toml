@@ -10,7 +10,7 @@ license = "MIT"
 repository = "https://github.com/maoertel/prometheus-push"
 
 [package.metadata.docs.rs]
-features = ["with_reqwest"]
+features = ["blocking", "with_reqwest", "with_reqwest_blocking"]
 
 [dependencies]
 async-trait = "0.1"
@@ -20,4 +20,6 @@ log = { version = "0.4", default-features = false, optional = true }
 
 [features]
 default = []
+blocking = []
 with_reqwest = ["reqwest", "log"]
+with_reqwest_blocking = ["blocking", "reqwest/blocking", "log"]

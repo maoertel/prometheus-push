@@ -1,12 +1,14 @@
-# Prometheus async push
+# Prometheus push
 
-This crate works as an extension to the [prometheus](https://crates.io/crates/prometheus) crate to be able to push non-blocking to your
-Prometheus push gateway and with a less dependent setup of `reqwest` (no `openssl` for example). Parts of the logic in this repo were
-taken but rewritten from the blocking `push` feature in the above mentioned `prometheus` crate.
+This crate works as an extension to the [prometheus](https://crates.io/crates/prometheus) crate to be able to push non-blocking (default) to your
+Prometheus push gateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your own http client.
 
 By default you have to implement the `Push` trait to use it with your choice of http client or you can use the `with_request` feature.
 This feature implements `Push` in a `PushClient` that leverages `reqwest` under the hood. Reqwest is setup without default features 
 (minimal set) so it should not interfere with your reqwest setup (e.g. `rust-tls`).
+
+Async functionality is considered the standard in this crate but you can enable the `blocking` feature to get the implementation without async. YourClient
+can enable the corresponding blocking `reqwest` implementation with the `with_request_blocking` feature.
 
 ## Example with feature `with_reqwest`
 
@@ -52,6 +54,13 @@ impl Push for YourClient {
     }
 }
 ```
+
+## features
+
+- `default`: by default async functionality and no reqwest is enabled
+- `with_request`: this feature enables `reqwest` in minimal configuration and enables the alredy implemented `PushClient`
+- `blocking`: on top of the default feature you get the same functionality in a blocking fashion
+- `with_reqwest_blocking`: like `with_reqwest` but including blocking and completely blocking
 
 ## License
 

@@ -5,9 +5,11 @@ pub mod with_request;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
+use prometheus::core::Collector;
 use prometheus::proto::MetricFamily;
 use prometheus::Encoder;
 use prometheus::ProtobufEncoder;
+use prometheus::Registry;
 #[cfg(feature = "with_reqwest")]
 use reqwest::Client;
 
@@ -75,6 +77,37 @@ impl<P: Push> MetricsPusher<P> {
             .await
     }
 
+    pub async fn push_all_collectors<'a, BH: BuildHasher>(
+        &self,
+        job: &'a str,
+        grouping: &'a HashMap<&'a str, &'a str, BH>,
+        collectors: Vec<Box<dyn Collector>>,
+    ) -> Result<()> {
+        self.push_collectors(job, grouping, collectors, PushType::All)
+            .await
+    }
+
+    pub async fn push_add_collectors<'a, BH: BuildHasher>(
+        &self,
+        job: &'a str,
+        grouping: &'a HashMap<&'a str, &'a str, BH>,
+        collectors: Vec<Box<dyn Collector>>,
+    ) -> Result<()> {
+        self.push_collectors(job, grouping, collectors, PushType::Add)
+            .await
+    }
+
+    async fn push_collectors<'a, BH: BuildHasher>(
+        &self,
+        job: &'a str,
+        grouping: &'a HashMap<&'a str, &'a str, BH>,
+        collectors: Vec<Box<dyn Collector>>,
+        push_type: PushType,
+    ) -> Result<()> {
+        let metric_families = metric_families_from(collectors)?;
+        self.push(job, grouping, metric_families, push_type).await
+    }
+
     async fn push<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
@@ -82,8 +115,7 @@ impl<P: Push> MetricsPusher<P> {
         metric_families: Vec<MetricFamily>,
         push_type: PushType,
     ) -> Result<()> {
-        validate_job(job)?;
-
+        let job = validate_job(job)?;
         let url = build_url(&self.url, job, grouping)?;
         let encoder = ProtobufEncoder::new();
         let encoded_metrics = encode_metrics(&encoder, grouping, metric_families)?;
@@ -103,6 +135,7 @@ impl<P: Push> MetricsPusher<P> {
         }
     }
 }
+
 fn build_url<'a, BH: BuildHasher>(
     url: &'a str,
     job: &'a str,
@@ -157,11 +190,21 @@ fn encode_metrics<'a, BH: BuildHasher>(
     Ok(encoded_metrics)
 }
 
-fn validate_job(job: &str) -> Result<()> {
+fn metric_families_from(collectors: Vec<Box<dyn Collector>>) -> Result<Vec<MetricFamily>> {
+    let registry = Registry::new();
+    for collector in collectors {
+        registry.register(collector)?;
+    }
+
+    Ok(registry.gather())
+}
+
+fn validate_job(job: &str) -> Result<&str> {
     if job.contains('/') {
         return Err(PushMetricsError::Generic(format!(
             "job name must not contain '/': {job}"
         )));
     }
-    Ok(())
+
+    Ok(job)
 }

@@ -24,6 +24,7 @@ pub trait Push {
     fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
 }
 
+#[derive(Debug)]
 pub struct MetricsPusher<P: Push> {
     push_client: P,
     url: Url,

@@ -33,6 +33,7 @@ enum PushType {
     All,
 }
 
+#[derive(Debug)]
 pub struct MetricsPusher<P: Push> {
     push_client: P,
     url: Url,

@@ -8,6 +8,7 @@ use reqwest::Response;
 use reqwest::StatusCode;
 use url::Url;
 
+#[derive(Debug)]
 pub struct PushClient {
     client: Client,
 }

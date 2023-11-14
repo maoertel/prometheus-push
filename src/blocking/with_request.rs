@@ -9,6 +9,7 @@ use crate::error::Result;
 use crate::helper::handle_response;
 use crate::helper::Respond;
 
+#[derive(Debug)]
 pub struct PushClient {
     client: Client,
 }

@@ -60,7 +60,7 @@ fn build_url<'a, BH: BuildHasher>(
     job: &'a str,
     grouping: &'a HashMap<&'a str, &'a str, BH>,
 ) -> Result<Url> {
-    let mut url = url.join(&format!("{job}/"))?;
+    let mut url_params = vec![job];
 
     for (label_name, label_value) in grouping {
         if label_value.contains('/') {
@@ -68,10 +68,11 @@ fn build_url<'a, BH: BuildHasher>(
                 "value of grouping label {label_name} contains '/': {label_value}",
             )));
         }
-        url = url.join(&format!("{label_name}/{label_value}/"))?;
+        url_params.push(label_name);
+        url_params.push(label_value);
     }
 
-    Ok(url)
+    Ok(url.join(&url_params.join("/"))?)
 }
 
 fn encode_metrics<'a, BH: BuildHasher>(

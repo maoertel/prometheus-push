@@ -14,8 +14,8 @@ use url::Url;
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
 use crate::error::Result;
-use crate::helper::create;
 use crate::helper::create_metrics_job_url;
+use crate::helper::create_push_details;
 use crate::helper::metric_families_from;
 use crate::PushType;
 
@@ -95,7 +95,8 @@ impl<P: Push> MetricsPusher<P> {
         metric_families: Vec<MetricFamily>,
         push_type: PushType,
     ) -> Result<()> {
-        let (url, encoded_metrics, encoder) = create(job, &self.url, grouping, metric_families)?;
+        let (url, encoded_metrics, encoder) =
+            create_push_details(job, &self.url, grouping, metric_families)?;
 
         match push_type {
             PushType::Add => {

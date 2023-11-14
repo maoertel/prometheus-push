@@ -13,18 +13,19 @@ use prometheus::proto::MetricFamily;
 use prometheus::Encoder;
 #[cfg(feature = "with_reqwest")]
 use reqwest::Client;
+use url::Url;
 
 use crate::error::Result;
 use crate::helper::create;
+use crate::helper::create_metrics_job_url;
 use crate::helper::metric_families_from;
-use crate::helper::validate_url;
 #[cfg(feature = "with_reqwest")]
 use crate::with_request::PushClient;
 
 #[async_trait::async_trait]
 pub trait Push {
-    async fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
-    async fn push_add(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
+    async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
+    async fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
 }
 
 enum PushType {
@@ -32,19 +33,20 @@ enum PushType {
     All,
 }
 
+#[derive(Debug)]
 pub struct MetricsPusher<P: Push> {
     push_client: P,
-    url: String,
+    url: Url,
 }
 
 impl<P: Push> MetricsPusher<P> {
-    pub fn new(push_client: P, url: &str) -> MetricsPusher<P> {
-        let url = validate_url(url);
-        Self { push_client, url }
+    pub fn new(push_client: P, url: &Url) -> Result<MetricsPusher<P>> {
+        let url = create_metrics_job_url(url)?;
+        Ok(Self { push_client, url })
     }
 
     #[cfg(feature = "with_reqwest")]
-    pub fn from(client: Client, url: &str) -> MetricsPusher<PushClient> {
+    pub fn from(client: Client, url: &Url) -> Result<MetricsPusher<PushClient>> {
         MetricsPusher::new(PushClient::new(client), url)
     }
 

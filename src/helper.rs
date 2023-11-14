@@ -8,31 +8,24 @@ use prometheus::ProtobufEncoder;
 use prometheus::Registry;
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 use reqwest::StatusCode;
+use url::Url;
 
 use crate::error::PushMetricsError;
 use crate::error::Result;
 
 const LABEL_NAME_JOB: &str = "job";
+const METRICS_JOB_PATH: &str = "metrics/job/";
 
-pub(crate) fn validate_url(url: &str) -> String {
-    let mut slash = "/";
-    let mut scheme = "http://";
-    if url.contains("://") {
-        scheme = ""
-    };
-    if url.ends_with('/') {
-        slash = ""
-    };
-
-    format!("{scheme}{url}{slash}metrics/job")
+pub(crate) fn create_metrics_job_url(url: &Url) -> Result<Url> {
+    Ok(url.join(METRICS_JOB_PATH)?)
 }
 
 pub(crate) fn create<'a, BH: BuildHasher>(
     job: &'a str,
-    url: &'a str,
+    url: &'a Url,
     grouping: &HashMap<&str, &str, BH>,
     metric_families: Vec<MetricFamily>,
-) -> Result<(String, Vec<u8>, ProtobufEncoder)> {
+) -> Result<(Url, Vec<u8>, ProtobufEncoder)> {
     let job = validate_job(job)?;
     let url = build_url(url, job, grouping)?;
     let encoder = ProtobufEncoder::new();
@@ -63,11 +56,12 @@ fn validate_job(job: &str) -> Result<&str> {
 }
 
 fn build_url<'a, BH: BuildHasher>(
-    url: &'a str,
+    url: &'a Url,
     job: &'a str,
     grouping: &'a HashMap<&'a str, &'a str, BH>,
-) -> Result<String> {
+) -> Result<Url> {
     let mut url_params = vec![job];
+
     for (label_name, label_value) in grouping {
         if label_value.contains('/') {
             return Err(PushMetricsError::Generic(format!(
@@ -78,9 +72,7 @@ fn build_url<'a, BH: BuildHasher>(
         url_params.push(label_value);
     }
 
-    let url = format!("{url}/{params}", params = url_params.join("/"));
-
-    Ok(url)
+    Ok(url.join(&url_params.join("/"))?)
 }
 
 fn encode_metrics<'a, BH: BuildHasher>(
@@ -119,7 +111,7 @@ fn encode_metrics<'a, BH: BuildHasher>(
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 pub(crate) trait Respond {
     fn get_status_code(&self) -> StatusCode;
-    fn get_url(&self) -> &reqwest::Url;
+    fn get_url(&self) -> &Url;
 }
 
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]

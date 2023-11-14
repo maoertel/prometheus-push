@@ -60,7 +60,7 @@ fn build_url<'a, BH: BuildHasher>(
     job: &'a str,
     grouping: &'a HashMap<&'a str, &'a str, BH>,
 ) -> Result<Url> {
-    let mut url = url.join(job)?;
+    let mut url = url.join(&format!("{job}/"))?;
 
     for (label_name, label_value) in grouping {
         if label_value.contains('/') {
@@ -68,8 +68,7 @@ fn build_url<'a, BH: BuildHasher>(
                 "value of grouping label {label_name} contains '/': {label_value}",
             )));
         }
-        url = url.join(label_name)?;
-        url = url.join(label_value)?;
+        url = url.join(&format!("{label_name}/{label_value}/"))?;
     }
 
     Ok(url)

@@ -14,7 +14,7 @@ use crate::error::PushMetricsError;
 use crate::error::Result;
 
 const LABEL_NAME_JOB: &str = "job";
-const METRICS_JOB_PATH: &str = "metrics/job";
+const METRICS_JOB_PATH: &str = "metrics/job/";
 
 pub(crate) fn create_metrics_job_url(url: &Url) -> Result<Url> {
     Ok(url.join(METRICS_JOB_PATH)?)

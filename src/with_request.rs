@@ -6,6 +6,7 @@ use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Response;
 use reqwest::StatusCode;
+use url::Url;
 
 pub struct PushClient {
     client: Client,
@@ -19,10 +20,10 @@ impl PushClient {
 
 #[async_trait::async_trait]
 impl Push for PushClient {
-    async fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()> {
+    async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
         let response = &self
             .client
-            .put(url)
+            .put(url.as_str())
             .header(CONTENT_TYPE, content_type)
             .body(body)
             .send()
@@ -31,10 +32,10 @@ impl Push for PushClient {
         handle_response(response)
     }
 
-    async fn push_add(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()> {
+    async fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
         let response = &self
             .client
-            .post(url)
+            .post(url.as_str())
             .header(CONTENT_TYPE, content_type)
             .body(body)
             .send()
@@ -49,7 +50,7 @@ impl Respond for Response {
         self.status()
     }
 
-    fn get_url(&self) -> &reqwest::Url {
+    fn get_url(&self) -> &Url {
         self.url()
     }
 }

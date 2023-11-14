@@ -9,33 +9,34 @@ use prometheus::proto::MetricFamily;
 use prometheus::Encoder;
 #[cfg(feature = "with_reqwest_blocking")]
 use reqwest::blocking::Client;
+use url::Url;
 
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
 use crate::error::Result;
 use crate::helper::create;
+use crate::helper::create_metrics_job_url;
 use crate::helper::metric_families_from;
-use crate::helper::validate_url;
 use crate::PushType;
 
 pub trait Push {
-    fn push_all(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
-    fn push_add(&self, url: &str, body: Vec<u8>, content_type: &str) -> Result<()>;
+    fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
+    fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
 }
 
 pub struct MetricsPusher<P: Push> {
     push_client: P,
-    url: String,
+    url: Url,
 }
 
 impl<P: Push> MetricsPusher<P> {
-    pub fn new(push_client: P, url: &str) -> MetricsPusher<P> {
-        let url = validate_url(url);
-        Self { push_client, url }
+    pub fn new(push_client: P, url: &Url) -> Result<MetricsPusher<P>> {
+        let url = create_metrics_job_url(url)?;
+        Ok(Self { push_client, url })
     }
 
     #[cfg(feature = "with_reqwest_blocking")]
-    pub fn from(client: Client, url: &str) -> MetricsPusher<PushClient> {
+    pub fn from(client: Client, url: &Url) -> Result<MetricsPusher<PushClient>> {
         MetricsPusher::new(PushClient::new(client), url)
     }
 

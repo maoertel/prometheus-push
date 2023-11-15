@@ -22,6 +22,8 @@ use crate::helper::metric_families_from;
 #[cfg(feature = "with_reqwest")]
 use crate::with_request::PushClient;
 
+/// Push is a trait that defines the interface for the implementation of your own http
+/// client of choice.
 #[async_trait::async_trait]
 pub trait Push {
     async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
@@ -33,6 +35,9 @@ enum PushType {
     All,
 }
 
+/// MetricsPusher is a prometheus push gateway client that holds information about the
+/// address of your push gateway instance and the [`Push`] client that is used to push
+/// metrics to the push gateway.
 #[derive(Debug)]
 pub struct MetricsPusher<P: Push> {
     push_client: P,
@@ -50,6 +55,12 @@ impl<P: Push> MetricsPusher<P> {
         MetricsPusher::new(PushClient::new(client), url)
     }
 
+    /// Pushes all metrics to your push gateway instance.
+    ///
+    /// Job name and grouping labels must not contain the character '/'.
+    ///
+    /// As this method pushes all metrics to the push gateway it replaces all previously
+    /// pushed metrics with the same job and grouping labels.
     pub async fn push_all<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
@@ -60,6 +71,10 @@ impl<P: Push> MetricsPusher<P> {
             .await
     }
 
+    /// Pushes all metrics to your push gateway instance with add logic. It will only replace
+    /// recently pushed metrics with the same name and grouping labels.
+    ///
+    /// Job name and grouping labels must not contain the character '/'.
     pub async fn push_add<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
@@ -70,6 +85,7 @@ impl<P: Push> MetricsPusher<P> {
             .await
     }
 
+    /// Pushes all metrics from collectors to the push gateway.
     pub async fn push_all_collectors<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
@@ -80,6 +96,8 @@ impl<P: Push> MetricsPusher<P> {
             .await
     }
 
+    /// Pushes all metrics from collectors to the push gateway with add logic. It will only replace
+    /// recently pushed metrics with the same name and grouping labels.
     pub async fn push_add_collectors<'a, BH: BuildHasher>(
         &self,
         job: &'a str,

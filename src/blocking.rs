@@ -6,7 +6,6 @@ use std::hash::BuildHasher;
 
 use prometheus::core::Collector;
 use prometheus::proto::MetricFamily;
-use prometheus::Encoder;
 #[cfg(feature = "with_reqwest_blocking")]
 use reqwest::blocking::Client;
 use url::Url;
@@ -15,8 +14,6 @@ use url::Url;
 use crate::blocking::with_request::PushClient;
 use crate::error::Result;
 use crate::helper::create_metrics_job_url;
-use crate::helper::create_push_details;
-use crate::helper::metric_families_from;
 use crate::PushType;
 
 /// Push is a trait that defines the interface for the implementation of your own http

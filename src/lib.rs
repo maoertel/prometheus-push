@@ -66,6 +66,7 @@
 
 #[cfg(feature = "blocking")]
 pub mod blocking;
+mod crate_prometheus;
 pub mod error;
 mod helper;
 #[cfg(feature = "with_reqwest")]
@@ -74,17 +75,12 @@ pub mod with_request;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
-use prometheus::core::Collector;
-use prometheus::proto::MetricFamily;
-use prometheus::Encoder;
 #[cfg(feature = "with_reqwest")]
 use reqwest::Client;
 use url::Url;
 
 use crate::error::Result;
 use crate::helper::create_metrics_job_url;
-use crate::helper::create_push_details;
-use crate::helper::metric_families_from;
 #[cfg(feature = "with_reqwest")]
 use crate::with_request::PushClient;
 
@@ -105,20 +101,64 @@ enum PushType {
 /// address of your pushgateway instance and the [`Push`] client that is used to push
 /// metrics to the pushgateway.
 #[derive(Debug)]
-pub struct MetricsPusher<P: Push> {
+pub struct MetricsPusher<P, M, MF, C>
+where
+    P: Push,
+    MF: MetricFamiliarize,
+    C: Collect,
+    M: ConvertMetrics<MF, C>,
+{
     push_client: P,
+    metrics_converter: M,
     url: Url,
+    mf: std::marker::PhantomData<MF>,
+    c: std::marker::PhantomData<C>,
 }
 
-impl<P: Push> MetricsPusher<P> {
-    pub fn new(push_client: P, url: &Url) -> Result<MetricsPusher<P>> {
+pub trait ConvertMetrics<MF, C>
+where
+    MF: MetricFamiliarize,
+    C: Collect,
+{
+    fn metric_families_from(&self, collectors: Vec<Box<C>>) -> Result<Vec<MF>>;
+
+    fn create_push_details<'a, BH: BuildHasher>(
+        &self,
+        job: &'a str,
+        url: &'a Url,
+        grouping: &HashMap<&str, &str, BH>,
+        metric_families: Vec<MF>,
+    ) -> Result<(Url, Vec<u8>, String)>;
+}
+
+pub trait MetricFamiliarize {}
+pub trait Collect {}
+
+impl<P, M, MF, C> MetricsPusher<P, M, MF, C>
+where
+    P: Push,
+    MF: MetricFamiliarize,
+    C: Collect,
+    M: ConvertMetrics<MF, C>,
+{
+    pub fn new(push_client: P, metrics_worker: M, url: &Url) -> Result<MetricsPusher<P, M, MF, C>> {
         let url = create_metrics_job_url(url)?;
-        Ok(Self { push_client, url })
+        Ok(Self {
+            push_client,
+            metrics_converter: metrics_worker,
+            url,
+            mf: std::marker::PhantomData,
+            c: std::marker::PhantomData,
+        })
     }
 
     #[cfg(feature = "with_reqwest")]
-    pub fn from(client: Client, url: &Url) -> Result<MetricsPusher<PushClient>> {
-        MetricsPusher::new(PushClient::new(client), url)
+    pub fn from(
+        client: Client,
+        metrics_worker: M,
+        url: &Url,
+    ) -> Result<MetricsPusher<PushClient, M, MF, C>> {
+        MetricsPusher::new(PushClient::new(client), metrics_worker, url)
     }
 
     /// Pushes all metrics to your pushgateway instance.
@@ -131,7 +171,7 @@ impl<P: Push> MetricsPusher<P> {
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
-        metric_families: Vec<MetricFamily>,
+        metric_families: Vec<MF>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::All)
             .await
@@ -145,7 +185,7 @@ impl<P: Push> MetricsPusher<P> {
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
-        metric_families: Vec<MetricFamily>,
+        metric_families: Vec<MF>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::Add)
             .await
@@ -156,7 +196,7 @@ impl<P: Push> MetricsPusher<P> {
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
-        collectors: Vec<Box<dyn Collector>>,
+        collectors: Vec<Box<C>>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
             .await
@@ -168,7 +208,7 @@ impl<P: Push> MetricsPusher<P> {
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
-        collectors: Vec<Box<dyn Collector>>,
+        collectors: Vec<Box<C>>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
             .await
@@ -178,10 +218,10 @@ impl<P: Push> MetricsPusher<P> {
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
-        collectors: Vec<Box<dyn Collector>>,
+        collectors: Vec<Box<C>>,
         push_type: PushType,
     ) -> Result<()> {
-        let metric_families = metric_families_from(collectors)?;
+        let metric_families = self.metrics_converter.metric_families_from(collectors)?;
         self.push(job, grouping, metric_families, push_type).await
     }
 
@@ -189,22 +229,26 @@ impl<P: Push> MetricsPusher<P> {
         &self,
         job: &'a str,
         grouping: &'a HashMap<&'a str, &'a str, BH>,
-        metric_families: Vec<MetricFamily>,
+        metric_families: Vec<MF>,
         push_type: PushType,
     ) -> Result<()> {
-        let (url, encoded_metrics, encoder) =
-            create_push_details(job, &self.url, grouping, metric_families)?;
+        let (url, encoded_metrics, content_type) = self.metrics_converter.create_push_details(
+            job,
+            &self.url,
+            grouping,
+            metric_families,
+        )?;
 
         match push_type {
             PushType::Add => {
                 self.push_client
-                    .push_add(&url, encoded_metrics, encoder.format_type())
+                    .push_add(&url, encoded_metrics, &content_type)
                     .await
             }
 
             PushType::All => {
                 self.push_client
-                    .push_all(&url, encoded_metrics, encoder.format_type())
+                    .push_all(&url, encoded_metrics, &content_type)
                     .await
             }
         }

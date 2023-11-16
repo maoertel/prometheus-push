@@ -21,7 +21,7 @@ reqwest = { version = "0.11", default-features = false, optional = true }
 log = { version = "0.4", default-features = false, optional = true }
 
 [features]
-default = []
+default = ["with_reqwest", "with_reqwest_blocking"]
 blocking = []
 with_reqwest = ["reqwest", "log"]
 with_reqwest_blocking = ["blocking", "reqwest/blocking", "log"]

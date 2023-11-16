@@ -1,6 +1,6 @@
 [package]
 name = "prometheus_push"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Mathias Oertel <mathias.oertel@pm.me>"]
 description = "Crate to extends the prometheus crate with async pushgateway support"

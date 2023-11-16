@@ -8,6 +8,8 @@ use reqwest::Response;
 use reqwest::StatusCode;
 use url::Url;
 
+/// PushClient is a wrapper for an async `reqwest` http client that implements
+/// the [`Push`] trait.
 #[derive(Debug)]
 pub struct PushClient {
     client: Client,

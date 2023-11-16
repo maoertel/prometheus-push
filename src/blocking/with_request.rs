@@ -9,6 +9,8 @@ use crate::error::Result;
 use crate::helper::handle_response;
 use crate::helper::Respond;
 
+/// PushClient is a wrapper for a blocking `reqwest` http client that implements
+/// the [`Push`] trait.
 #[derive(Debug)]
 pub struct PushClient {
     client: Client,

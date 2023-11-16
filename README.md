@@ -1,7 +1,7 @@
 # Prometheus push
 
 This crate works as an extension to the [prometheus](https://crates.io/crates/prometheus) crate to be able to push non-blocking (default) to your
-Prometheus push gateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your own http client.
+Prometheus pushgateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your own http client.
 
 By default you have to implement the `Push` trait to use it with your choice of http client or you can use the `with_reqwest` feature.
 This feature already implements `Push` in a `PushClient` that leverages `reqwest` under the hood. Reqwest is setup without default features

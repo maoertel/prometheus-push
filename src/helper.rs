@@ -111,7 +111,7 @@ pub(crate) trait Respond {
 pub(crate) fn handle_response<R: Respond>(response: &R) -> Result<()> {
     match response.get_status_code() {
         StatusCode::ACCEPTED | StatusCode::OK => {
-            log::info!("Pushed metrics to the push gateway.");
+            log::info!("Pushed metrics to the pushgateway.");
             Ok(())
         }
         status_code => Err(PushMetricsError::response(&status_code, response.get_url())),

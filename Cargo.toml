@@ -1,11 +1,12 @@
 [package]
-name = "prometheus-push"
+name = "prometheus_push"
 version = "0.1.0"
 edition = "2021"
 authors = ["Mathias Oertel <mathias.oertel@pm.me>"]
 description = "Crate to extends the prometheus crate with async pushgateway support"
+documentation = "https://docs.rs/prometheus_push"
 readme = "README.md"
-keywords = ["metrics", "oberservability"]
+keywords = ["prometheus", "pushgateway", "metrics", "oberservability"]
 license = "MIT"
 repository = "https://github.com/maoertel/prometheus-push"
 

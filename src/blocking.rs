@@ -26,9 +26,9 @@ pub trait Push {
     fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
 }
 
-/// MetricsPusher is a prometheus push gateway client that holds information about the
-/// address of your push gateway instance and the [`Push`] client that is used to push
-/// metrics to the push gateway.
+/// MetricsPusher is a prometheus pushgateway client that holds information about the
+/// address of your pushgateway instance and the [`Push`] client that is used to push
+/// metrics to the pushgateway.
 #[derive(Debug)]
 pub struct MetricsPusher<P: Push> {
     push_client: P,
@@ -46,11 +46,11 @@ impl<P: Push> MetricsPusher<P> {
         MetricsPusher::new(PushClient::new(client), url)
     }
 
-    /// Pushes all metrics to your push gateway instance.
+    /// Pushes all metrics to your pushgateway instance.
     ///
     /// Job name and grouping labels must not contain the character '/'.
     ///
-    /// As this method pushes all metrics to the push gateway it replaces all previously
+    /// As this method pushes all metrics to the pushgateway it replaces all previously
     /// pushed metrics with the same job and grouping labels.
     pub fn push_all<'a, BH: BuildHasher>(
         &self,
@@ -61,7 +61,7 @@ impl<P: Push> MetricsPusher<P> {
         self.push(job, grouping, metric_families, PushType::All)
     }
 
-    /// Pushes all metrics to your push gateway instance with add logic. It will only replace
+    /// Pushes all metrics to your pushgateway instance with add logic. It will only replace
     /// recently pushed metrics with the same name and grouping labels.
     ///
     /// Job name and grouping labels must not contain the character '/'.
@@ -83,7 +83,7 @@ impl<P: Push> MetricsPusher<P> {
         self.push_collectors(job, grouping, collectors, PushType::All)
     }
 
-    /// Pushes all metrics from collectors to the push gateway.
+    /// Pushes all metrics from collectors to the pushgateway.
     pub fn push_add_collectors<'a, BH: BuildHasher>(
         &self,
         job: &'a str,
@@ -93,7 +93,7 @@ impl<P: Push> MetricsPusher<P> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
     }
 
-    /// Pushes all metrics from collectors to the push gateway with add logic. It will only replace
+    /// Pushes all metrics from collectors to the pushgateway with add logic. It will only replace
     /// recently pushed metrics with the same name and grouping labels.
     fn push_collectors<'a, BH: BuildHasher>(
         &self,

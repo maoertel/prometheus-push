@@ -64,8 +64,11 @@
 //! - `with_reqwest_blocking`: like `with_reqwest` but including blocking and completely blocking
 //!
 
+#[cfg(feature = "async")]
+pub mod r#async;
 #[cfg(feature = "blocking")]
 pub mod blocking;
+#[cfg(feature = "prometheus_crate")]
 mod crate_prometheus;
 pub mod error;
 mod helper;
@@ -75,14 +78,9 @@ pub mod with_request;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
-#[cfg(feature = "with_reqwest")]
-use reqwest::Client;
 use url::Url;
 
 use crate::error::Result;
-use crate::helper::create_metrics_job_url;
-#[cfg(feature = "with_reqwest")]
-use crate::with_request::PushClient;
 
 /// Push is a trait that defines the interface for the implementation of your own http
 /// client of choice.
@@ -97,160 +95,14 @@ enum PushType {
     All,
 }
 
-/// MetricsPusher is a prometheus pushgateway client that holds information about the
-/// address of your pushgateway instance and the [`Push`] client that is used to push
-/// metrics to the pushgateway.
-#[derive(Debug)]
-pub struct MetricsPusher<P, M, MF, C>
-where
-    P: Push,
-    MF: MetricFamiliarize,
-    C: Collect,
-    M: ConvertMetrics<MF, C>,
-{
-    push_client: P,
-    metrics_converter: M,
-    url: Url,
-    mf: std::marker::PhantomData<MF>,
-    c: std::marker::PhantomData<C>,
-}
-
-pub trait ConvertMetrics<MF, C>
-where
-    MF: MetricFamiliarize,
-    C: Collect,
-{
+pub trait ConvertMetrics<MF, C> {
     fn metric_families_from(&self, collectors: Vec<Box<C>>) -> Result<Vec<MF>>;
 
-    fn create_push_details<'a, BH: BuildHasher>(
+    fn create_push_details<BH: BuildHasher>(
         &self,
-        job: &'a str,
-        url: &'a Url,
+        job: &str,
+        url: &Url,
         grouping: &HashMap<&str, &str, BH>,
         metric_families: Vec<MF>,
     ) -> Result<(Url, Vec<u8>, String)>;
-}
-
-pub trait MetricFamiliarize {}
-pub trait Collect {}
-
-impl<P, M, MF, C> MetricsPusher<P, M, MF, C>
-where
-    P: Push,
-    MF: MetricFamiliarize,
-    C: Collect,
-    M: ConvertMetrics<MF, C>,
-{
-    pub fn new(push_client: P, metrics_worker: M, url: &Url) -> Result<MetricsPusher<P, M, MF, C>> {
-        let url = create_metrics_job_url(url)?;
-        Ok(Self {
-            push_client,
-            metrics_converter: metrics_worker,
-            url,
-            mf: std::marker::PhantomData,
-            c: std::marker::PhantomData,
-        })
-    }
-
-    #[cfg(feature = "with_reqwest")]
-    pub fn from(
-        client: Client,
-        metrics_worker: M,
-        url: &Url,
-    ) -> Result<MetricsPusher<PushClient, M, MF, C>> {
-        MetricsPusher::new(PushClient::new(client), metrics_worker, url)
-    }
-
-    /// Pushes all metrics to your pushgateway instance.
-    ///
-    /// Job name and grouping labels must not contain the character '/'.
-    ///
-    /// As this method pushes all metrics to the pushgateway it replaces all previously
-    /// pushed metrics with the same job and grouping labels.
-    pub async fn push_all<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        grouping: &'a HashMap<&'a str, &'a str, BH>,
-        metric_families: Vec<MF>,
-    ) -> Result<()> {
-        self.push(job, grouping, metric_families, PushType::All)
-            .await
-    }
-
-    /// Pushes all metrics to your pushgateway instance with add logic. It will only replace
-    /// recently pushed metrics with the same name and grouping labels.
-    ///
-    /// Job name and grouping labels must not contain the character '/'.
-    pub async fn push_add<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        grouping: &'a HashMap<&'a str, &'a str, BH>,
-        metric_families: Vec<MF>,
-    ) -> Result<()> {
-        self.push(job, grouping, metric_families, PushType::Add)
-            .await
-    }
-
-    /// Pushes all metrics from collectors to the pushgateway.
-    pub async fn push_all_collectors<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        grouping: &'a HashMap<&'a str, &'a str, BH>,
-        collectors: Vec<Box<C>>,
-    ) -> Result<()> {
-        self.push_collectors(job, grouping, collectors, PushType::All)
-            .await
-    }
-
-    /// Pushes all metrics from collectors to the pushgateway with add logic. It will only replace
-    /// recently pushed metrics with the same name and grouping labels.
-    pub async fn push_add_collectors<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        grouping: &'a HashMap<&'a str, &'a str, BH>,
-        collectors: Vec<Box<C>>,
-    ) -> Result<()> {
-        self.push_collectors(job, grouping, collectors, PushType::Add)
-            .await
-    }
-
-    async fn push_collectors<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        grouping: &'a HashMap<&'a str, &'a str, BH>,
-        collectors: Vec<Box<C>>,
-        push_type: PushType,
-    ) -> Result<()> {
-        let metric_families = self.metrics_converter.metric_families_from(collectors)?;
-        self.push(job, grouping, metric_families, push_type).await
-    }
-
-    async fn push<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        grouping: &'a HashMap<&'a str, &'a str, BH>,
-        metric_families: Vec<MF>,
-        push_type: PushType,
-    ) -> Result<()> {
-        let (url, encoded_metrics, content_type) = self.metrics_converter.create_push_details(
-            job,
-            &self.url,
-            grouping,
-            metric_families,
-        )?;
-
-        match push_type {
-            PushType::Add => {
-                self.push_client
-                    .push_add(&url, encoded_metrics, &content_type)
-                    .await
-            }
-
-            PushType::All => {
-                self.push_client
-                    .push_all(&url, encoded_metrics, &content_type)
-                    .await
-            }
-        }
-    }
 }

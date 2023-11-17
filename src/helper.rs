@@ -1,10 +1,13 @@
+#[cfg(feature = "prometheus_crate")]
 use std::collections::HashMap;
+#[cfg(feature = "prometheus_crate")]
 use std::hash::BuildHasher;
 
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 use reqwest::StatusCode;
 use url::Url;
 
+#[cfg(feature = "prometheus_crate")]
 use crate::error::PushMetricsError;
 use crate::error::Result;
 
@@ -14,10 +17,11 @@ pub(crate) fn create_metrics_job_url(url: &Url) -> Result<Url> {
     Ok(url.join(METRICS_JOB_PATH)?)
 }
 
-pub(crate) fn build_url<'a, BH: BuildHasher>(
-    url: &'a Url,
-    job: &'a str,
-    grouping: &'a HashMap<&'a str, &'a str, BH>,
+#[cfg(feature = "prometheus_crate")]
+pub(crate) fn build_url<BH: BuildHasher>(
+    url: &Url,
+    job: &str,
+    grouping: &HashMap<&str, &str, BH>,
 ) -> Result<Url> {
     let mut url_params = vec![job];
 
@@ -29,6 +33,7 @@ pub(crate) fn build_url<'a, BH: BuildHasher>(
     Ok(url.join(&url_params.join("/"))?)
 }
 
+#[cfg(feature = "prometheus_crate")]
 pub(crate) fn validate(value: &str) -> Result<&str> {
     if value.contains('/') {
         return Err(PushMetricsError::slash_in_name(value));

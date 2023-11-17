@@ -13,23 +13,43 @@ use crate::error::PushMetricsError;
 use crate::error::Result;
 use crate::helper::build_url;
 use crate::helper::validate;
-use crate::Collect;
 use crate::ConvertMetrics;
-use crate::MetricFamiliarize;
 
 pub struct PrometheusMetricsConverter;
 
-pub trait MetaCollect: Collect + Collector {}
-impl MetricFamiliarize for MetricFamily {}
-
 const LABEL_NAME_JOB: &str = "job";
+
+impl<C: Collector + 'static> ConvertMetrics<MetricFamily, C> for PrometheusMetricsConverter {
+    fn metric_families_from(&self, collectors: Vec<Box<C>>) -> Result<Vec<MetricFamily>> {
+        let registry = Registry::new();
+        for collector in collectors {
+            registry.register(collector)?;
+        }
+
+        Ok(registry.gather())
+    }
+
+    fn create_push_details<BH: BuildHasher>(
+        &self,
+        job: &str,
+        url: &Url,
+        grouping: &HashMap<&str, &str, BH>,
+        metric_families: Vec<MetricFamily>,
+    ) -> Result<(Url, Vec<u8>, String)> {
+        let url = build_url(url, validate(job)?, grouping)?;
+        let encoder = ProtobufEncoder::new();
+        let encoded_metrics = self.encode_metrics(&encoder, metric_families, grouping)?;
+
+        Ok((url, encoded_metrics, String::from(encoder.format_type())))
+    }
+}
 
 impl PrometheusMetricsConverter {
     pub fn new() -> Self {
         Self {}
     }
 
-    fn encode_metrics<'a, BH: BuildHasher>(
+    fn encode_metrics<BH: BuildHasher>(
         &self,
         encoder: &ProtobufEncoder,
         metric_families: Vec<MetricFamily>,
@@ -61,30 +81,5 @@ impl PrometheusMetricsConverter {
         }
 
         Ok(encoded_metrics)
-    }
-}
-
-impl<C: MetaCollect + 'static> ConvertMetrics<MetricFamily, C> for PrometheusMetricsConverter {
-    fn metric_families_from(&self, collectors: Vec<Box<C>>) -> Result<Vec<MetricFamily>> {
-        let registry = Registry::new();
-        for collector in collectors {
-            registry.register(collector)?;
-        }
-
-        Ok(registry.gather())
-    }
-
-    fn create_push_details<'a, BH: BuildHasher>(
-        &self,
-        job: &'a str,
-        url: &'a url::Url,
-        grouping: &HashMap<&str, &str, BH>,
-        metric_families: Vec<MetricFamily>,
-    ) -> Result<(Url, Vec<u8>, String)> {
-        let url = build_url(url, validate(job)?, grouping)?;
-        let encoder = ProtobufEncoder::new();
-        let encoded_metrics = self.encode_metrics(&encoder, metric_families, grouping)?;
-
-        Ok((url, encoded_metrics, String::from(encoder.format_type())))
     }
 }

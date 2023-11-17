@@ -59,17 +59,8 @@ where
         })
     }
 
-    #[cfg(feature = "with_reqwest")]
-    pub fn with_reqwest(
-        client: Client,
-        metrics_converter: M,
-        url: &Url,
-    ) -> Result<MetricsPusher<PushClient, M, MF, C>> {
-        MetricsPusher::new(PushClient::new(client), metrics_converter, url)
-    }
-
     #[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
-    pub fn with_reqwest_prometheus(client: Client, url: &Url) -> Result<PrometheusMetricsPusher> {
+    pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusher> {
         MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
     }
 

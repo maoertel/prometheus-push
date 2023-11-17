@@ -68,20 +68,8 @@ where
         })
     }
 
-    #[cfg(feature = "with_reqwest_blocking")]
-    pub fn with_reqwest(
-        client: Client,
-        metrics_worker: M,
-        url: &Url,
-    ) -> Result<MetricsPusher<PushClient, M, MF, C>> {
-        MetricsPusher::new(PushClient::new(client), metrics_worker, url)
-    }
-
     #[cfg(all(feature = "with_reqwest_blocking", feature = "prometheus_crate"))]
-    pub fn with_reqwest_prometheus(
-        client: Client,
-        url: &Url,
-    ) -> Result<PrometheusMetricsPusherBlocking> {
+    pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusherBlocking> {
         MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
     }
 

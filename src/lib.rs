@@ -64,14 +64,14 @@
 //! - `with_reqwest_blocking`: like `with_reqwest` but including blocking and completely blocking
 //!
 
-#[cfg(feature = "async")]
-pub mod r#async;
 #[cfg(feature = "blocking")]
 pub mod blocking;
 #[cfg(feature = "prometheus_crate")]
 pub mod crate_prometheus;
 pub mod error;
 mod helper;
+#[cfg(feature = "async")]
+pub mod non_blocking;
 #[cfg(feature = "with_reqwest")]
 pub mod with_request;
 

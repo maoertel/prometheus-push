@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::hash::BuildHasher;
 
 use prometheus::core::Collector;
 use prometheus::proto::MetricFamily;
@@ -32,11 +31,11 @@ impl ConvertMetrics<MetricFamily, Box<dyn Collector>> for PrometheusMetricsConve
         Ok(registry.gather())
     }
 
-    fn create_push_details<BH: BuildHasher>(
+    fn create_push_details(
         &self,
         job: &str,
         url: &Url,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MetricFamily>,
     ) -> Result<(Url, Vec<u8>, String)> {
         let url = build_url(url, validate(job)?, grouping)?;
@@ -47,18 +46,12 @@ impl ConvertMetrics<MetricFamily, Box<dyn Collector>> for PrometheusMetricsConve
     }
 }
 
-impl Default for PrometheusMetricsConverter {
-    fn default() -> Self {
-        Self {}
-    }
-}
-
 impl PrometheusMetricsConverter {
-    fn encode_metrics<BH: BuildHasher>(
+    fn encode_metrics(
         &self,
         encoder: &ProtobufEncoder,
         metric_families: Vec<MetricFamily>,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
     ) -> Result<Vec<u8>> {
         let mut encoded_metrics = Vec::new();
         for metric_family in metric_families {

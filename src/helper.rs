@@ -1,10 +1,7 @@
-#[cfg(feature = "prometheus_crate")]
-use std::collections::HashMap;
-#[cfg(feature = "prometheus_crate")]
-use std::hash::BuildHasher;
-
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 use reqwest::StatusCode;
+#[cfg(feature = "prometheus_crate")]
+use std::collections::HashMap;
 use url::Url;
 
 #[cfg(feature = "prometheus_crate")]
@@ -18,11 +15,7 @@ pub(crate) fn create_metrics_job_url(url: &Url) -> Result<Url> {
 }
 
 #[cfg(feature = "prometheus_crate")]
-pub(crate) fn build_url<BH: BuildHasher>(
-    url: &Url,
-    job: &str,
-    grouping: &HashMap<&str, &str, BH>,
-) -> Result<Url> {
+pub(crate) fn build_url(url: &Url, job: &str, grouping: &HashMap<&str, &str>) -> Result<Url> {
     let mut url_params = vec![job];
 
     for (label_name, label_value) in grouping {

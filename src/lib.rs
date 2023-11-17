@@ -66,17 +66,16 @@
 
 #[cfg(feature = "blocking")]
 pub mod blocking;
-#[cfg(feature = "prometheus_crate")]
-pub mod crate_prometheus;
 pub mod error;
 mod helper;
 #[cfg(feature = "async")]
 pub mod non_blocking;
+#[cfg(feature = "prometheus_crate")]
+pub mod prometheus_crate;
 #[cfg(feature = "with_reqwest")]
 pub mod with_request;
 
 use std::collections::HashMap;
-use std::hash::BuildHasher;
 
 use url::Url;
 
@@ -98,11 +97,11 @@ enum PushType {
 pub trait ConvertMetrics<MF, C> {
     fn metric_families_from(&self, collectors: Vec<C>) -> Result<Vec<MF>>;
 
-    fn create_push_details<BH: BuildHasher>(
+    fn create_push_details(
         &self,
         job: &str,
         url: &Url,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
     ) -> Result<(Url, Vec<u8>, String)>;
 }

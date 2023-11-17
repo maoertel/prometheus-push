@@ -1,14 +1,13 @@
 use std::collections::HashMap;
-use std::hash::BuildHasher;
 
 #[cfg(feature = "with_reqwest")]
 use reqwest::Client;
 use url::Url;
 
-#[cfg(feature = "prometheus_crate")]
-use crate::crate_prometheus::PrometheusMetricsConverter;
 use crate::error::Result;
 use crate::helper::create_metrics_job_url;
+#[cfg(feature = "prometheus_crate")]
+use crate::prometheus_crate::PrometheusMetricsConverter;
 #[cfg(feature = "with_reqwest")]
 use crate::with_request::PushClient;
 use crate::ConvertMetrics;
@@ -70,10 +69,10 @@ where
     ///
     /// As this method pushes all metrics to the pushgateway it replaces all previously
     /// pushed metrics with the same job and grouping labels.
-    pub async fn push_all<BH: BuildHasher>(
+    pub async fn push_all(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::All)
@@ -84,10 +83,10 @@ where
     /// recently pushed metrics with the same name and grouping labels.
     ///
     /// Job name and grouping labels must not contain the character '/'.
-    pub async fn push_add<BH: BuildHasher>(
+    pub async fn push_add(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::Add)
@@ -95,10 +94,10 @@ where
     }
 
     /// Pushes all metrics from collectors to the pushgateway.
-    pub async fn push_all_collectors<BH: BuildHasher>(
+    pub async fn push_all_collectors(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
@@ -107,20 +106,20 @@ where
 
     /// Pushes all metrics from collectors to the pushgateway with add logic. It will only replace
     /// recently pushed metrics with the same name and grouping labels.
-    pub async fn push_add_collectors<BH: BuildHasher>(
+    pub async fn push_add_collectors(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
             .await
     }
 
-    async fn push_collectors<BH: BuildHasher>(
+    async fn push_collectors(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         collectors: Vec<C>,
         push_type: PushType,
     ) -> Result<()> {
@@ -128,10 +127,10 @@ where
         self.push(job, grouping, metric_families, push_type).await
     }
 
-    async fn push<BH: BuildHasher>(
+    async fn push(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
         push_type: PushType,
     ) -> Result<()> {

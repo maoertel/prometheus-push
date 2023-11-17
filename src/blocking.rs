@@ -2,7 +2,6 @@
 pub mod with_request;
 
 use std::collections::HashMap;
-use std::hash::BuildHasher;
 
 #[cfg(feature = "prometheus_crate")]
 use prometheus::core::Collector;
@@ -14,10 +13,10 @@ use url::Url;
 
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
-#[cfg(feature = "prometheus_crate")]
-use crate::crate_prometheus::PrometheusMetricsConverter;
 use crate::error::Result;
 use crate::helper::create_metrics_job_url;
+#[cfg(feature = "prometheus_crate")]
+use crate::prometheus_crate::PrometheusMetricsConverter;
 use crate::ConvertMetrics;
 use crate::PushType;
 
@@ -44,7 +43,7 @@ where
     c: std::marker::PhantomData<C>,
 }
 
-#[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
+#[cfg(all(feature = "with_reqwest_blocking", feature = "prometheus_crate"))]
 pub type PrometheusMetricsPusherBlocking =
     MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>;
 
@@ -79,10 +78,10 @@ where
     ///
     /// As this method pushes all metrics to the pushgateway it replaces all previously
     /// pushed metrics with the same job and grouping labels.
-    pub fn push_all<BH: BuildHasher>(
+    pub fn push_all(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::All)
@@ -92,29 +91,29 @@ where
     /// recently pushed metrics with the same name and grouping labels.
     ///
     /// Job name and grouping labels must not contain the character '/'.
-    pub fn push_add<BH: BuildHasher>(
+    pub fn push_add(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::Add)
     }
 
-    pub fn push_all_collectors<BH: BuildHasher>(
+    pub fn push_all_collectors(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
     }
 
     /// Pushes all metrics from collectors to the pushgateway.
-    pub fn push_add_collectors<BH: BuildHasher>(
+    pub fn push_add_collectors(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
@@ -122,10 +121,10 @@ where
 
     /// Pushes all metrics from collectors to the pushgateway with add logic. It will only replace
     /// recently pushed metrics with the same name and grouping labels.
-    fn push_collectors<BH: BuildHasher>(
+    fn push_collectors(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         collectors: Vec<C>,
         push_type: PushType,
     ) -> Result<()> {
@@ -133,10 +132,10 @@ where
         self.push(job, grouping, metric_families, push_type)
     }
 
-    fn push<BH: BuildHasher>(
+    fn push(
         &self,
         job: &str,
-        grouping: &HashMap<&str, &str, BH>,
+        grouping: &HashMap<&str, &str>,
         metric_families: Vec<MF>,
         push_type: PushType,
     ) -> Result<()> {

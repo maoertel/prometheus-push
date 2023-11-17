@@ -19,8 +19,11 @@ pub struct PrometheusMetricsConverter;
 
 const LABEL_NAME_JOB: &str = "job";
 
-impl<C: Collector + 'static> ConvertMetrics<MetricFamily, C> for PrometheusMetricsConverter {
-    fn metric_families_from(&self, collectors: Vec<Box<C>>) -> Result<Vec<MetricFamily>> {
+impl ConvertMetrics<MetricFamily, Box<dyn Collector>> for PrometheusMetricsConverter {
+    fn metric_families_from(
+        &self,
+        collectors: Vec<Box<dyn Collector>>,
+    ) -> Result<Vec<MetricFamily>> {
         let registry = Registry::new();
         for collector in collectors {
             registry.register(collector)?;

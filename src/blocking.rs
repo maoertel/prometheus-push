@@ -99,7 +99,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str, BH>,
-        collectors: Vec<Box<C>>,
+        collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
     }
@@ -109,7 +109,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str, BH>,
-        collectors: Vec<Box<C>>,
+        collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
     }
@@ -120,7 +120,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str, BH>,
-        collectors: Vec<Box<C>>,
+        collectors: Vec<C>,
         push_type: PushType,
     ) -> Result<()> {
         let metric_families = self.metrics_converter.metric_families_from(collectors)?;

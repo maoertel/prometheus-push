@@ -69,7 +69,7 @@ pub mod r#async;
 #[cfg(feature = "blocking")]
 pub mod blocking;
 #[cfg(feature = "prometheus_crate")]
-mod crate_prometheus;
+pub mod crate_prometheus;
 pub mod error;
 mod helper;
 #[cfg(feature = "with_reqwest")]
@@ -96,7 +96,7 @@ enum PushType {
 }
 
 pub trait ConvertMetrics<MF, C> {
-    fn metric_families_from(&self, collectors: Vec<Box<C>>) -> Result<Vec<MF>>;
+    fn metric_families_from(&self, collectors: Vec<C>) -> Result<Vec<MF>>;
 
     fn create_push_details<BH: BuildHasher>(
         &self,

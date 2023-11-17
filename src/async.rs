@@ -65,10 +65,12 @@ where
     }
 
     #[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
-    pub fn from<COLL: Collector + 'static>(
+    pub fn from(
         client: Client,
         url: &Url,
-    ) -> Result<MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, COLL>> {
+    ) -> Result<
+        MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>,
+    > {
         MetricsPusher::new(
             PushClient::new(client),
             PrometheusMetricsConverter::new(),
@@ -111,7 +113,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str, BH>,
-        collectors: Vec<Box<C>>,
+        collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
             .await
@@ -123,7 +125,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str, BH>,
-        collectors: Vec<Box<C>>,
+        collectors: Vec<C>,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
             .await
@@ -133,7 +135,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str, BH>,
-        collectors: Vec<Box<C>>,
+        collectors: Vec<C>,
         push_type: PushType,
     ) -> Result<()> {
         let metric_families = self.metrics_converter.metric_families_from(collectors)?;

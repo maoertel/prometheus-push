@@ -6,8 +6,8 @@ use url::Url;
 
 use crate::blocking::Push;
 use crate::error::Result;
-use crate::helper::handle_response;
-use crate::helper::Respond;
+use crate::utils::handle_response;
+use crate::utils::Respond;
 
 /// PushClient is a wrapper for a blocking `reqwest` http client that implements
 /// the [`Push`] trait.

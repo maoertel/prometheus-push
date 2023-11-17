@@ -14,7 +14,7 @@ use url::Url;
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
 use crate::error::Result;
-use crate::helper::create_metrics_job_url;
+use crate::utils::create_metrics_job_url;
 #[cfg(feature = "prometheus_crate")]
 use crate::prometheus_crate::PrometheusMetricsConverter;
 use crate::ConvertMetrics;

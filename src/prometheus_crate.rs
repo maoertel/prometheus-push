@@ -10,8 +10,8 @@ use url::Url;
 use crate::error::LabelType;
 use crate::error::PushMetricsError;
 use crate::error::Result;
-use crate::helper::build_url;
-use crate::helper::validate;
+use crate::utils::build_url;
+use crate::utils::validate;
 use crate::ConvertMetrics;
 
 pub struct PrometheusMetricsConverter;

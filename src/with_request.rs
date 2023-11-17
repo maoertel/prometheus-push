@@ -1,6 +1,6 @@
 use crate::error::Result;
-use crate::helper::handle_response;
-use crate::helper::Respond;
+use crate::utils::handle_response;
+use crate::utils::Respond;
 use crate::Push;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;

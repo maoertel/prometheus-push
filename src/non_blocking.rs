@@ -5,7 +5,7 @@ use reqwest::Client;
 use url::Url;
 
 use crate::error::Result;
-use crate::helper::create_metrics_job_url;
+use crate::utils::create_metrics_job_url;
 #[cfg(feature = "prometheus_crate")]
 use crate::prometheus_crate::PrometheusMetricsConverter;
 #[cfg(feature = "with_reqwest")]

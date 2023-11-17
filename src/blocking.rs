@@ -4,12 +4,18 @@ pub mod with_request;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
+#[cfg(feature = "prometheus_crate")]
+use prometheus::core::Collector;
+#[cfg(feature = "prometheus_crate")]
+use prometheus::proto::MetricFamily;
 #[cfg(feature = "with_reqwest_blocking")]
 use reqwest::blocking::Client;
 use url::Url;
 
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
+#[cfg(feature = "prometheus_crate")]
+use crate::crate_prometheus::PrometheusMetricsConverter;
 use crate::error::Result;
 use crate::helper::create_metrics_job_url;
 use crate::ConvertMetrics;
@@ -38,6 +44,10 @@ where
     c: std::marker::PhantomData<C>,
 }
 
+#[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
+pub type PrometheusMetricsPusherBlocking =
+    MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>;
+
 impl<P, M, MF, C> MetricsPusher<P, M, MF, C>
 where
     P: Push,
@@ -59,12 +69,20 @@ where
     }
 
     #[cfg(feature = "with_reqwest_blocking")]
-    pub fn from(
+    pub fn with_reqwest(
         client: Client,
         metrics_worker: M,
         url: &Url,
     ) -> Result<MetricsPusher<PushClient, M, MF, C>> {
         MetricsPusher::new(PushClient::new(client), metrics_worker, url)
+    }
+
+    #[cfg(all(feature = "with_reqwest_blocking", feature = "prometheus_crate"))]
+    pub fn with_reqwest_prometheus(
+        client: Client,
+        url: &Url,
+    ) -> Result<PrometheusMetricsPusherBlocking> {
+        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
     }
 
     /// Pushes all metrics to your pushgateway instance.

@@ -47,11 +47,13 @@ impl ConvertMetrics<MetricFamily, Box<dyn Collector>> for PrometheusMetricsConve
     }
 }
 
-impl PrometheusMetricsConverter {
-    pub fn new() -> Self {
+impl Default for PrometheusMetricsConverter {
+    fn default() -> Self {
         Self {}
     }
+}
 
+impl PrometheusMetricsConverter {
     fn encode_metrics<BH: BuildHasher>(
         &self,
         encoder: &ProtobufEncoder,

@@ -35,6 +35,10 @@ where
     c: std::marker::PhantomData<C>,
 }
 
+#[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
+pub type PrometheusMetricsPusher =
+    MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>;
+
 impl<P, M, MF, C> MetricsPusher<P, M, MF, C>
 where
     P: Push,
@@ -65,17 +69,8 @@ where
     }
 
     #[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
-    pub fn from(
-        client: Client,
-        url: &Url,
-    ) -> Result<
-        MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>,
-    > {
-        MetricsPusher::new(
-            PushClient::new(client),
-            PrometheusMetricsConverter::new(),
-            url,
-        )
+    pub fn with_reqwest_prometheus(client: Client, url: &Url) -> Result<PrometheusMetricsPusher> {
+        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
     }
 
     /// Pushes all metrics to your pushgateway instance.

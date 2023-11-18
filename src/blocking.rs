@@ -14,9 +14,9 @@ use url::Url;
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking::with_request::PushClient;
 use crate::error::Result;
-use crate::utils::create_metrics_job_url;
 #[cfg(feature = "prometheus_crate")]
 use crate::prometheus_crate::PrometheusMetricsConverter;
+use crate::utils::create_metrics_job_url;
 use crate::ConvertMetrics;
 use crate::PushType;
 
@@ -52,6 +52,8 @@ where
     P: Push,
     M: ConvertMetrics<MF, C>,
 {
+    /// Creates a new [`MetricsPusher`] with the given [`Push`] client, [`ConvertMetrics`]
+    /// implementation and the url of your pushgateway instance.
     pub fn new(
         push_client: P,
         metrics_converter: M,
@@ -67,6 +69,8 @@ where
         })
     }
 
+    /// Creates a new [`MetricsPusher`] with the given [`reqwest::Client`] client and the Url
+    /// of your pushgateway instance.
     #[cfg(all(feature = "with_reqwest_blocking", feature = "prometheus_crate"))]
     pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusherBlocking> {
         MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)

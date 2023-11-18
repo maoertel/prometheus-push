@@ -20,7 +20,8 @@ use prometheus::proto::MetricFamily;
 
 /// MetricsPusher is a prometheus pushgateway client that holds information about the
 /// address of your pushgateway instance and the [`Push`] client that is used to push
-/// metrics to the pushgateway.
+/// metrics to the pushgateway. Furthermore it needs a [`ConvertMetrics`] implementation 
+/// that converts the metrics to the format that is used by the pushgateway.
 #[derive(Debug)]
 pub struct MetricsPusher<P, M, MF, C>
 where

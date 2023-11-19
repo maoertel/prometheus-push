@@ -22,7 +22,7 @@ impl PushClient {
     }
 }
 
-impl Push for PushClient {
+impl Push<Vec<u8>> for PushClient {
     fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
         let response = &self
             .client

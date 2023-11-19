@@ -20,29 +20,35 @@ use prometheus::proto::MetricFamily;
 
 /// MetricsPusher is a prometheus pushgateway client that holds information about the
 /// address of your pushgateway instance and the [`Push`] client that is used to push
-/// metrics to the pushgateway. Furthermore it needs a [`ConvertMetrics`] implementation 
+/// metrics to the pushgateway. Furthermore it needs a [`ConvertMetrics`] implementation
 /// that converts the metrics to the format that is used by the pushgateway.
 #[derive(Debug)]
-pub struct MetricsPusher<P, M, MF, C>
+pub struct MetricsPusher<P, M, MF, C, B>
 where
-    P: Push,
-    M: ConvertMetrics<MF, C>,
+    P: Push<B>,
+    M: ConvertMetrics<MF, C, B>,
 {
     push_client: P,
     metrics_converter: M,
     url: Url,
     mf: std::marker::PhantomData<MF>,
     c: std::marker::PhantomData<C>,
+    b: std::marker::PhantomData<B>,
 }
 
 #[cfg(all(feature = "with_reqwest", feature = "prometheus_crate"))]
-pub type PrometheusMetricsPusher =
-    MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>;
+pub type PrometheusMetricsPusher = MetricsPusher<
+    PushClient,
+    PrometheusMetricsConverter,
+    Vec<MetricFamily>,
+    Vec<Box<dyn Collector>>,
+    Vec<u8>,
+>;
 
-impl<P, M, MF, C> MetricsPusher<P, M, MF, C>
+impl<P, M, MF, C, B> MetricsPusher<P, M, MF, C, B>
 where
-    P: Push,
-    M: ConvertMetrics<MF, C>,
+    P: Push<B>,
+    M: ConvertMetrics<MF, C, B>,
 {
     /// Creates a new [`MetricsPusher`] with the given [`Push`] client, [`ConvertMetrics`]
     /// implementation and the url of your pushgateway instance.
@@ -50,7 +56,7 @@ where
         push_client: P,
         metrics_converter: M,
         url: &Url,
-    ) -> Result<MetricsPusher<P, M, MF, C>> {
+    ) -> Result<MetricsPusher<P, M, MF, C, B>> {
         let url = create_metrics_job_url(url)?;
         Ok(Self {
             push_client,
@@ -58,6 +64,7 @@ where
             url,
             mf: std::marker::PhantomData,
             c: std::marker::PhantomData,
+            b: std::marker::PhantomData,
         })
     }
 
@@ -78,7 +85,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str>,
-        metric_families: Vec<MF>,
+        metric_families: MF,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::All)
             .await
@@ -92,7 +99,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str>,
-        metric_families: Vec<MF>,
+        metric_families: MF,
     ) -> Result<()> {
         self.push(job, grouping, metric_families, PushType::Add)
             .await
@@ -103,7 +110,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str>,
-        collectors: Vec<C>,
+        collectors: C,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::All)
             .await
@@ -115,7 +122,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str>,
-        collectors: Vec<C>,
+        collectors: C,
     ) -> Result<()> {
         self.push_collectors(job, grouping, collectors, PushType::Add)
             .await
@@ -125,10 +132,10 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str>,
-        collectors: Vec<C>,
+        collectors: C,
         push_type: PushType,
     ) -> Result<()> {
-        let metric_families = self.metrics_converter.metric_families_from(collectors)?;
+        let metric_families = self.metrics_converter.metrics_from(collectors)?;
         self.push(job, grouping, metric_families, push_type).await
     }
 
@@ -136,7 +143,7 @@ where
         &self,
         job: &str,
         grouping: &HashMap<&str, &str>,
-        metric_families: Vec<MF>,
+        metric_families: MF,
         push_type: PushType,
     ) -> Result<()> {
         let (url, encoded_metrics, content_type) = self.metrics_converter.create_push_details(

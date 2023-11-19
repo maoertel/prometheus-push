@@ -111,6 +111,7 @@ pub mod blocking;
 pub mod error;
 #[cfg(feature = "non_blocking")]
 pub mod non_blocking;
+pub mod prometheus_client_crate;
 #[cfg(feature = "prometheus_crate")]
 pub mod prometheus_crate;
 mod utils;
@@ -126,9 +127,9 @@ use crate::error::Result;
 /// Push is a trait that defines the interface for the implementation of your own http
 /// client of choice.
 #[async_trait::async_trait]
-pub trait Push {
-    async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
-    async fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
+pub trait Push<B> {
+    async fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
+    async fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
 }
 
 /// PushType defines the two types of push requests to the pushgateway.
@@ -139,9 +140,9 @@ enum PushType {
 
 /// ConvertMetrics defines the interface for the implementation of your own prometheus logic
 /// to incorporate it into [`MetricsPusher`].
-pub trait ConvertMetrics<MF, C> {
+pub trait ConvertMetrics<MF, C, B> {
     /// metric_families_from converts the given collectors to metric families.
-    fn metric_families_from(&self, collectors: Vec<C>) -> Result<Vec<MF>>;
+    fn metrics_from(&self, collectors: C) -> Result<MF>;
 
     /// create_push_details creates the input arguments for the [`Push`] clients methods.
     fn create_push_details(
@@ -149,6 +150,6 @@ pub trait ConvertMetrics<MF, C> {
         job: &str,
         url: &Url,
         grouping: &HashMap<&str, &str>,
-        metric_families: Vec<MF>,
-    ) -> Result<(Url, Vec<u8>, String)>;
+        metrics: MF,
+    ) -> Result<(Url, B, String)>;
 }

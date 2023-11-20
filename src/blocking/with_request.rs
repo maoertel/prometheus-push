@@ -1,3 +1,4 @@
+use reqwest::blocking::Body;
 use reqwest::blocking::Client;
 use reqwest::blocking::Response;
 use reqwest::header::CONTENT_TYPE;
@@ -22,8 +23,8 @@ impl PushClient {
     }
 }
 
-impl Push<Vec<u8>> for PushClient {
-    fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
+impl<B: Into<Body>> Push<B> for PushClient {
+    fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()> {
         let response = &self
             .client
             .put(url.as_str())
@@ -34,7 +35,7 @@ impl Push<Vec<u8>> for PushClient {
         handle_response(response)
     }
 
-    fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
+    fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()> {
         let response = &self
             .client
             .post(url.as_str())

@@ -20,7 +20,7 @@ impl ConvertMetrics<String, Vec<Box<dyn Collector>>, Vec<u8>> for PrometheusMetr
         }
 
         let mut writer = String::new();
-        encode(&mut writer, &registry).unwrap();
+        encode(&mut writer, &registry)?;
         Ok(writer)
     }
 
@@ -34,10 +34,6 @@ impl ConvertMetrics<String, Vec<Box<dyn Collector>>, Vec<u8>> for PrometheusMetr
         let url = build_url(url, validate(job)?, grouping)?;
         let encoded_metrics = metric_families.into_bytes();
 
-        Ok((
-            url,
-            encoded_metrics,
-            String::from("text/plain; version=0.0.4"),
-        ))
+        Ok((url, encoded_metrics, String::from("text/plain")))
     }
 }

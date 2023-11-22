@@ -26,18 +26,18 @@ where
     b: std::marker::PhantomData<B>,
 }
 
-impl<P, M, MF, C, B> MetricsPusher<P, M, MF, C, B>
+impl<P, CM, MF, C, B> MetricsPusher<P, CM, MF, C, B>
 where
     P: Push<B>,
-    M: ConvertMetrics<MF, C, B>,
+    CM: ConvertMetrics<MF, C, B>,
 {
     /// Creates a new [`MetricsPusher`] with the given [`Push`] client, [`ConvertMetrics`]
     /// implementation and the url of your pushgateway instance.
     pub fn new(
         push_client: P,
-        metrics_converter: M,
+        metrics_converter: CM,
         url: &Url,
-    ) -> Result<MetricsPusher<P, M, MF, C, B>> {
+    ) -> Result<MetricsPusher<P, CM, MF, C, B>> {
         let url = create_metrics_job_url(url)?;
         Ok(Self {
             push_client,

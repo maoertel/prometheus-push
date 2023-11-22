@@ -106,8 +106,8 @@
 //! - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
 //!
 
-pub mod error;
-mod utils;
+#[cfg(all(feature = "with_request", feature = "with_reqwest_blocking"))]
+compile_error!("Feature 'with_request' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");
 
 #[cfg(feature = "blocking")]
 pub mod blocking;
@@ -119,6 +119,9 @@ pub mod prometheus_client_crate;
 pub mod prometheus_crate;
 #[cfg(feature = "with_reqwest")]
 pub mod with_request;
+
+pub mod error;
+mod utils;
 
 use std::collections::HashMap;
 

@@ -5,7 +5,6 @@ use url::Url;
 use crate::error::Result;
 use crate::utils::create_metrics_job_url;
 use crate::ConvertMetrics;
-use crate::Push;
 use crate::PushType;
 
 /// MetricsPusher is a prometheus pushgateway client that holds information about the
@@ -24,6 +23,15 @@ where
     mf: std::marker::PhantomData<MF>,
     c: std::marker::PhantomData<C>,
     b: std::marker::PhantomData<B>,
+}
+
+/// Push is a trait that defines the interface for the implementation of your own http
+/// client of choice.
+#[cfg(feature = "non_blocking")]
+#[async_trait::async_trait]
+pub trait Push<B> {
+    async fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
+    async fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
 }
 
 impl<P, CM, MF, C, B> MetricsPusher<P, CM, MF, C, B>

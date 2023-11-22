@@ -17,9 +17,9 @@ use crate::ConvertMetrics;
 #[cfg(feature = "with_reqwest")]
 use crate::non_blocking::MetricsPusher;
 #[cfg(feature = "with_reqwest")]
-use crate::with_request::PushClient;
+use crate::non_blocking::Push;
 #[cfg(feature = "with_reqwest")]
-use crate::Push;
+use crate::with_request::PushClient;
 #[cfg(feature = "with_reqwest")]
 use reqwest::Client;
 

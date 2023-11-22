@@ -106,16 +106,18 @@
 //! - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
 //!
 
-#[cfg(feature = "blocking")]
-pub mod blocking;
 pub mod error;
+mod utils;
+
 #[cfg(feature = "non_blocking")]
 pub mod non_blocking;
+
+#[cfg(feature = "blocking")]
+pub mod blocking;
 #[cfg(feature = "prometheus_client_crate")]
 pub mod prometheus_client_crate;
 #[cfg(feature = "prometheus_crate")]
 pub mod prometheus_crate;
-mod utils;
 #[cfg(feature = "with_reqwest")]
 pub mod with_request;
 
@@ -124,15 +126,6 @@ use std::collections::HashMap;
 use url::Url;
 
 use crate::error::Result;
-
-/// Push is a trait that defines the interface for the implementation of your own http
-/// client of choice.
-#[cfg(feature = "non_blocking")]
-#[async_trait::async_trait]
-pub trait Push<B> {
-    async fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
-    async fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
-}
 
 /// PushType defines the two types of push requests to the pushgateway.
 enum PushType {

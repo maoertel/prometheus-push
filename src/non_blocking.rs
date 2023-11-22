@@ -4,8 +4,8 @@ use url::Url;
 
 use crate::error::Result;
 use crate::utils::create_metrics_job_url;
+use crate::utils::PushType;
 use crate::ConvertMetrics;
-use crate::PushType;
 
 /// MetricsPusher is a prometheus pushgateway client that holds information about the
 /// address of your pushgateway instance and the [`Push`] client that is used to push

@@ -109,11 +109,10 @@
 pub mod error;
 mod utils;
 
-#[cfg(feature = "non_blocking")]
-pub mod non_blocking;
-
 #[cfg(feature = "blocking")]
 pub mod blocking;
+#[cfg(feature = "non_blocking")]
+pub mod non_blocking;
 #[cfg(feature = "prometheus_client_crate")]
 pub mod prometheus_client_crate;
 #[cfg(feature = "prometheus_crate")]
@@ -126,12 +125,6 @@ use std::collections::HashMap;
 use url::Url;
 
 use crate::error::Result;
-
-/// PushType defines the two types of push requests to the pushgateway.
-enum PushType {
-    Add,
-    All,
-}
 
 /// ConvertMetrics defines the interface for the implementation of your own prometheus logic
 /// to incorporate it into [`MetricsPusher`].

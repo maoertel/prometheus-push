@@ -41,6 +41,13 @@ pub(crate) fn validate(value: &str) -> Result<&str> {
     Ok(value)
 }
 
+/// PushType defines the two types of push requests to the pushgateway.
+#[cfg(any(feature = "blocking", feature = "non_blocking"))]
+pub enum PushType {
+    Add,
+    All,
+}
+
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 pub(crate) trait Respond {
     fn get_status_code(&self) -> StatusCode;

@@ -7,8 +7,8 @@ use url::Url;
 
 use crate::error::Result;
 use crate::utils::create_metrics_job_url;
+use crate::utils::PushType;
 use crate::ConvertMetrics;
-use crate::PushType;
 
 /// Push is a trait that defines the interface for the implementation of your own http
 /// client of choice.

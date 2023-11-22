@@ -14,6 +14,24 @@ use crate::utils::build_url;
 use crate::utils::validate;
 use crate::ConvertMetrics;
 
+#[cfg(feature = "with_reqwest")]
+use crate::non_blocking::MetricsPusher;
+#[cfg(feature = "with_reqwest")]
+use crate::with_request::PushClient;
+#[cfg(feature = "with_reqwest")]
+use crate::Push;
+#[cfg(feature = "with_reqwest")]
+use reqwest::Client;
+
+#[cfg(feature = "with_reqwest_blocking")]
+use crate::blocking::with_request::PushClient;
+#[cfg(feature = "with_reqwest_blocking")]
+use crate::blocking::MetricsPusher;
+#[cfg(feature = "with_reqwest_blocking")]
+use crate::blocking::Push;
+#[cfg(feature = "with_reqwest_blocking")]
+use reqwest::blocking::Client;
+
 pub struct PrometheusMetricsConverter;
 
 const LABEL_NAME_JOB: &str = "job";
@@ -78,5 +96,49 @@ impl PrometheusMetricsConverter {
         }
 
         Ok(encoded_metrics)
+    }
+}
+
+#[cfg(feature = "with_reqwest_blocking")]
+pub type PrometheusMetricsPusherBlocking = MetricsPusher<
+    PushClient,
+    PrometheusMetricsConverter,
+    Vec<MetricFamily>,
+    Vec<Box<dyn Collector>>,
+    Vec<u8>,
+>;
+
+#[cfg(feature = "with_reqwest_blocking")]
+impl<P, CM, MF, C, B> MetricsPusher<P, CM, MF, C, B>
+where
+    P: Push<B>,
+    CM: ConvertMetrics<MF, C, B>,
+{
+    /// Creates a new [`MetricsPusher`] with the given [`reqwest::blocking::Client`] client
+    /// and the Url of your pushgateway instance.
+    pub fn blocking_from(client: Client, url: &Url) -> Result<PrometheusMetricsPusherBlocking> {
+        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
+    }
+}
+
+#[cfg(feature = "with_reqwest")]
+pub type PrometheusMetricsPusher = MetricsPusher<
+    PushClient,
+    PrometheusMetricsConverter,
+    Vec<MetricFamily>,
+    Vec<Box<dyn Collector>>,
+    Vec<u8>,
+>;
+
+#[cfg(feature = "with_reqwest")]
+impl<P, M, MF, C, B> MetricsPusher<P, M, MF, C, B>
+where
+    P: Push<B>,
+    M: ConvertMetrics<MF, C, B>,
+{
+    /// Creates a new [`MetricsPusher`] with the given [`reqwest::Client`] client and the Url
+    /// of your pushgateway instance.
+    pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusher> {
+        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
     }
 }

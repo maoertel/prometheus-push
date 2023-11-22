@@ -1,10 +1,16 @@
+#[cfg(any(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
+use std::collections::HashMap;
+
 #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 use reqwest::StatusCode;
-#[cfg(feature = "prometheus_crate")]
-use std::collections::HashMap;
 use url::Url;
 
-#[cfg(feature = "prometheus_crate")]
+#[cfg(any(
+    feature = "with_reqwest",
+    feature = "with_reqwest_blocking",
+    feature = "prometheus_crate",
+    feature = "prometheus_client_crate"
+))]
 use crate::error::PushMetricsError;
 use crate::error::Result;
 
@@ -14,7 +20,7 @@ pub(crate) fn create_metrics_job_url(url: &Url) -> Result<Url> {
     Ok(url.join(METRICS_JOB_PATH)?)
 }
 
-#[cfg(feature = "prometheus_crate")]
+#[cfg(any(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
 pub(crate) fn build_url(url: &Url, job: &str, grouping: &HashMap<&str, &str>) -> Result<Url> {
     let mut url_params = vec![job];
 
@@ -26,7 +32,7 @@ pub(crate) fn build_url(url: &Url, job: &str, grouping: &HashMap<&str, &str>) ->
     Ok(url.join(&url_params.join("/"))?)
 }
 
-#[cfg(feature = "prometheus_crate")]
+#[cfg(any(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
 pub(crate) fn validate(value: &str) -> Result<&str> {
     if value.contains('/') {
         return Err(PushMetricsError::slash_in_name(value));

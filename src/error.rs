@@ -35,7 +35,7 @@ impl PushMetricsError {
         PushMetricsError::AlreadyContainsLabel(message)
     }
 
-    #[cfg(feature = "prometheus_crate")]
+    #[cfg(any(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
     pub(crate) fn slash_in_name(value: &str) -> Self {
         let message = format!("labels and job name must not contain '/': '{value}'");
         PushMetricsError::SlashInName(message)

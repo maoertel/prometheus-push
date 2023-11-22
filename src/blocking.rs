@@ -3,19 +3,9 @@ pub mod with_request;
 
 use std::collections::HashMap;
 
-#[cfg(feature = "prometheus_crate")]
-use prometheus::core::Collector;
-#[cfg(feature = "prometheus_crate")]
-use prometheus::proto::MetricFamily;
-#[cfg(feature = "with_reqwest_blocking")]
-use reqwest::blocking::Client;
 use url::Url;
 
-#[cfg(feature = "with_reqwest_blocking")]
-use crate::blocking::with_request::PushClient;
 use crate::error::Result;
-#[cfg(feature = "prometheus_crate")]
-use crate::prometheus_crate::PrometheusMetricsConverter;
 use crate::utils::create_metrics_job_url;
 use crate::ConvertMetrics;
 use crate::PushType;
@@ -32,27 +22,18 @@ pub trait Push<B> {
 /// metrics to the pushgateway. Furthermore it needs a [`ConvertMetrics`] implementation
 /// that converts the metrics to the format that is used by the pushgateway.
 #[derive(Debug)]
-pub struct MetricsPusher<P, M, MF, C, B>
+pub struct MetricsPusher<P, CM, MF, C, B>
 where
     P: Push<B>,
-    M: ConvertMetrics<MF, C, B>,
+    CM: ConvertMetrics<MF, C, B>,
 {
     push_client: P,
-    metrics_converter: M,
+    metrics_converter: CM,
     url: Url,
     mf: std::marker::PhantomData<MF>,
     c: std::marker::PhantomData<C>,
     b: std::marker::PhantomData<B>,
 }
-
-#[cfg(all(feature = "with_reqwest_blocking", feature = "prometheus_crate"))]
-pub type PrometheusMetricsPusherBlocking = MetricsPusher<
-    PushClient,
-    PrometheusMetricsConverter,
-    Vec<MetricFamily>,
-    Vec<Box<dyn Collector>>,
-    Vec<u8>,
->;
 
 impl<P, M, MF, C, B> MetricsPusher<P, M, MF, C, B>
 where
@@ -75,13 +56,6 @@ where
             c: std::marker::PhantomData,
             b: std::marker::PhantomData,
         })
-    }
-
-    /// Creates a new [`MetricsPusher`] with the given [`reqwest::Client`] client and the Url
-    /// of your pushgateway instance.
-    #[cfg(all(feature = "with_reqwest_blocking", feature = "prometheus_crate"))]
-    pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusherBlocking> {
-        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
     }
 
     /// Pushes all metrics to your pushgateway instance.

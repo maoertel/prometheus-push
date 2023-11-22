@@ -111,6 +111,7 @@ pub mod blocking;
 pub mod error;
 #[cfg(feature = "non_blocking")]
 pub mod non_blocking;
+#[cfg(feature = "prometheus_client_crate")]
 pub mod prometheus_client_crate;
 #[cfg(feature = "prometheus_crate")]
 pub mod prometheus_crate;
@@ -126,6 +127,7 @@ use crate::error::Result;
 
 /// Push is a trait that defines the interface for the implementation of your own http
 /// client of choice.
+#[cfg(feature = "non_blocking")]
 #[async_trait::async_trait]
 pub trait Push<B> {
     async fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;

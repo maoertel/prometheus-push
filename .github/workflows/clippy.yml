@@ -17,4 +17,11 @@ jobs:
       - name: Install Clippy
         run: rustup component add clippy
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --no-default-features --features with_reqwest,prometheus_crate -- -D warnings
+      - name: Run Clippy
+        run: cargo clippy --no-default-features --features with_reqwest,prometheus_client_crate -- -D warnings
+      - name: Run Clippy
+        run: cargo clippy --no-default-features --features with_reqwest_blocking,prometheus_crate -- -D warnings
+      - name: Run Clippy
+        run: cargo clippy --no-default-features --features with_reqwest_blocking,prometheus_client_crate -- -D warnings
+

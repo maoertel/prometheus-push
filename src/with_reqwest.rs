@@ -10,7 +10,7 @@ use crate::non_blocking::Push;
 use crate::utils::handle_response;
 use crate::utils::Respond;
 
-/// PushClient is a wrapper for an async `reqwest` http client that implements
+/// PushClient is a wrapper for an async `reqwest` http [`Client`] that implements
 /// the [`Push`] trait.
 #[derive(Debug)]
 pub struct PushClient {

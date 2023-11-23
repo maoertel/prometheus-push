@@ -1,5 +1,3 @@
-//! # Prometheus push
-//!
 //! This crate works as an extension to prometheus crates like [prometheus](https://crates.io/crates/prometheus) to be able to push non-blocking (default)
 //! or blocking to your Prometheus pushgateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your
 //! own http client.
@@ -17,7 +15,7 @@
 //!
 //! ## Example with features `with_reqwest` and `prometheus_crate`
 //!
-//! ```compile_fail
+//! ```ignore
 //! use prometheus::labels;
 //! use prometheus_push::prometheus_crate::PrometheusMetricsPusher;
 //! use reqwest::Client;
@@ -42,7 +40,7 @@
 //!
 //! Basically it is as simple as that.
 //!
-//! ```compile_fail
+//! ```ignore
 //! use prometheus_push::non_blocking::Push;
 //!
 //! pub struct YourClient;
@@ -64,7 +62,7 @@
 //! In case you want to use another promethues client implementation you can implement your own type that implements
 //! the `ConvertMetrics` trait to inject it into your instance of `MetricsPusher`.
 //!
-//! ```compile_fail
+//! ```ignore
 //! impl ConvertMetrics<Vec<YourMetricFamily>, Vec<Box<dyn YourCollector>>, Vec<u8>> for YourMetricsConverter {
 //!     fn metric_families_from(
 //!         &self,

@@ -48,7 +48,7 @@ use prometheus_push::non_blocking::Push;
 pub struct YourClient;
 
 #[async_trait::async_trait]
-impl Push for YourClient {
+impl Push<Vec<u8>> for PushClient {
     async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
         // implement a PUT request with your client with this body and `content_type` in header
     }

@@ -16,6 +16,8 @@ pub enum PushMetricsError {
     SlashInName(String),
     #[cfg(feature = "prometheus_crate")]
     Prometheus(prometheus::Error),
+    #[cfg(feature = "prometheus_client_crate")]
+    PrometheusClient(std::fmt::Error),
     #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
     Response(String),
     #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
@@ -35,7 +37,7 @@ impl PushMetricsError {
         PushMetricsError::AlreadyContainsLabel(message)
     }
 
-    #[cfg(feature = "prometheus_crate")]
+    #[cfg(any(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
     pub(crate) fn slash_in_name(value: &str) -> Self {
         let message = format!("labels and job name must not contain '/': '{value}'");
         PushMetricsError::SlashInName(message)
@@ -74,6 +76,8 @@ impl fmt::Display for PushMetricsError {
             PushMetricsError::SlashInName(message) => std::fmt::Display::fmt(message, f),
             #[cfg(feature = "prometheus_crate")]
             PushMetricsError::Prometheus(e) => std::fmt::Display::fmt(e, f),
+            #[cfg(feature = "prometheus_client_crate")]
+            PushMetricsError::PrometheusClient(e) => std::fmt::Display::fmt(e, f),
             #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
             PushMetricsError::Response(e) => std::fmt::Display::fmt(e, f),
             #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
@@ -90,8 +94,15 @@ impl From<url::ParseError> for PushMetricsError {
 
 #[cfg(feature = "prometheus_crate")]
 impl From<prometheus::Error> for PushMetricsError {
-    fn from(prometheus_error: prometheus::Error) -> Self {
-        PushMetricsError::Prometheus(prometheus_error)
+    fn from(error: prometheus::Error) -> Self {
+        PushMetricsError::Prometheus(error)
+    }
+}
+
+#[cfg(feature = "prometheus_client_crate")]
+impl From<std::fmt::Error> for PushMetricsError {
+    fn from(error: std::fmt::Error) -> Self {
+        PushMetricsError::PrometheusClient(error)
     }
 }
 

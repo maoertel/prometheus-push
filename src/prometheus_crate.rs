@@ -14,15 +14,26 @@ use crate::utils::build_url;
 use crate::utils::validate;
 use crate::ConvertMetrics;
 
+#[cfg(feature = "with_reqwest")]
+use crate::non_blocking::MetricsPusher;
+#[cfg(feature = "with_reqwest")]
+use crate::non_blocking::Push;
+#[cfg(feature = "with_reqwest")]
+use crate::with_reqwest::PushClient;
+#[cfg(feature = "with_reqwest")]
+use reqwest::Client;
+
+#[cfg(feature = "with_reqwest_blocking")]
+use crate::blocking;
+
 pub struct PrometheusMetricsConverter;
 
 const LABEL_NAME_JOB: &str = "job";
 
-impl ConvertMetrics<MetricFamily, Box<dyn Collector>> for PrometheusMetricsConverter {
-    fn metric_families_from(
-        &self,
-        collectors: Vec<Box<dyn Collector>>,
-    ) -> Result<Vec<MetricFamily>> {
+impl ConvertMetrics<Vec<MetricFamily>, Vec<Box<dyn Collector>>, Vec<u8>>
+    for PrometheusMetricsConverter
+{
+    fn metrics_from(&self, collectors: Vec<Box<dyn Collector>>) -> Result<Vec<MetricFamily>> {
         let registry = Registry::new();
         for collector in collectors {
             registry.register(collector)?;
@@ -79,5 +90,56 @@ impl PrometheusMetricsConverter {
         }
 
         Ok(encoded_metrics)
+    }
+}
+
+#[cfg(feature = "with_reqwest")]
+pub type PrometheusMetricsPusher = MetricsPusher<
+    PushClient,
+    PrometheusMetricsConverter,
+    Vec<MetricFamily>,
+    Vec<Box<dyn Collector>>,
+    Vec<u8>,
+>;
+
+#[cfg(feature = "with_reqwest")]
+impl<P, M, MF, C, B> MetricsPusher<P, M, MF, C, B>
+where
+    P: Push<B>,
+    M: ConvertMetrics<MF, C, B>,
+{
+    /// Creates a new [`MetricsPusher`] with the given [`reqwest::Client`] client and the Url
+    /// of your pushgateway instance.
+    pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusher> {
+        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
+    }
+}
+
+#[cfg(feature = "with_reqwest_blocking")]
+pub type PrometheusMetricsPusherBlocking = blocking::MetricsPusher<
+    blocking::with_reqwest::PushClient,
+    PrometheusMetricsConverter,
+    Vec<MetricFamily>,
+    Vec<Box<dyn Collector>>,
+    Vec<u8>,
+>;
+
+#[cfg(feature = "with_reqwest_blocking")]
+impl<P, CM, MF, C, B> blocking::MetricsPusher<P, CM, MF, C, B>
+where
+    P: blocking::Push<B>,
+    CM: ConvertMetrics<MF, C, B>,
+{
+    /// Creates a new [`MetricsPusher`] with the given [`reqwest::blocking::Client`] client
+    /// and the Url of your pushgateway instance.
+    pub fn from(
+        client: reqwest::blocking::Client,
+        url: &Url,
+    ) -> Result<PrometheusMetricsPusherBlocking> {
+        blocking::MetricsPusher::new(
+            blocking::with_reqwest::PushClient::new(client),
+            PrometheusMetricsConverter,
+            url,
+        )
     }
 }

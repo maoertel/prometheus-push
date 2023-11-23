@@ -1,14 +1,16 @@
-use crate::error::Result;
-use crate::utils::handle_response;
-use crate::utils::Respond;
-use crate::Push;
+use reqwest::blocking::Body;
+use reqwest::blocking::Client;
+use reqwest::blocking::Response;
 use reqwest::header::CONTENT_TYPE;
-use reqwest::Client;
-use reqwest::Response;
 use reqwest::StatusCode;
 use url::Url;
 
-/// PushClient is a wrapper for an async `reqwest` http client that implements
+use crate::blocking::Push;
+use crate::error::Result;
+use crate::utils::handle_response;
+use crate::utils::Respond;
+
+/// PushClient is a wrapper for a blocking `reqwest` http client that implements
 /// the [`Push`] trait.
 #[derive(Debug)]
 pub struct PushClient {
@@ -21,28 +23,25 @@ impl PushClient {
     }
 }
 
-#[async_trait::async_trait]
-impl Push for PushClient {
-    async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
+impl<B: Into<Body>> Push<B> for PushClient {
+    fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()> {
         let response = &self
             .client
             .put(url.as_str())
             .header(CONTENT_TYPE, content_type)
             .body(body)
-            .send()
-            .await?;
+            .send()?;
 
         handle_response(response)
     }
 
-    async fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
+    fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()> {
         let response = &self
             .client
             .post(url.as_str())
             .header(CONTENT_TYPE, content_type)
             .body(body)
-            .send()
-            .await?;
+            .send()?;
 
         handle_response(response)
     }

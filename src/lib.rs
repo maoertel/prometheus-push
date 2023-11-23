@@ -1,5 +1,3 @@
-//! # Prometheus push
-//!
 //! This crate works as an extension to prometheus crates like [prometheus](https://crates.io/crates/prometheus) to be able to push non-blocking (default)
 //! or blocking to your Prometheus pushgateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your
 //! own http client.
@@ -17,21 +15,13 @@
 //!
 //! ## Example with features `with_reqwest` and `prometheus_crate`
 //!
-//! ```compile_fail
-//! use prometheus::core::Collector;
+//! ```ignore
 //! use prometheus::labels;
-//! use prometheus::proto::MetricFamily;
-//! use prometheus_push::non_blocking::MetricsPusher;
-//! use prometheus_push::prometheus_crate::PrometheusMetricsConverter;
-//! use prometheus_push::with_reqwest::PushClient;
-//! use prometheus_push::MetricsPusher;
+//! use prometheus_push::prometheus_crate::PrometheusMetricsPusher;
 //! use reqwest::Client;
 //! use url::Url;
 //!
-//! pub type PrometheusMetricsPusher =
-//!   MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>;
-//!
-//! let push_gateway: Url = <address to your instance>;
+//! let push_gateway: Url = "<address to your instance>";
 //! let client = Client::new();
 //! let metrics_pusher = PrometheusMetricsPusher::from(client, &push_gateway)?;
 //! metrics_pusher
@@ -50,13 +40,10 @@
 //!
 //! Basically it is as simple as that.
 //!
-//! ```compile_fail
-//! use prometheus_push::Push;
-//! ...
+//! ```ignore
+//! use prometheus_push::non_blocking::Push;
 //!
-//! pub struct YourClient {
-//!     ...
-//! }
+//! pub struct YourClient;
 //!
 //! #[async_trait::async_trait]
 //! impl Push for YourClient {
@@ -75,8 +62,8 @@
 //! In case you want to use another promethues client implementation you can implement your own type that implements
 //! the `ConvertMetrics` trait to inject it into your instance of `MetricsPusher`.
 //!
-//! ```compile_fail
-//! impl ConvertMetrics<YourMetricFamily, Box<dyn YourCollector>> for YourMetricsConverter {
+//! ```ignore
+//! impl ConvertMetrics<Vec<YourMetricFamily>, Vec<Box<dyn YourCollector>>, Vec<u8>> for YourMetricsConverter {
 //!     fn metric_families_from(
 //!         &self,
 //!         collectors: Vec<Box<dyn YourCollector>>,
@@ -104,18 +91,38 @@
 //! - `with_reqwest`: this feature enables the `non_blocking` feature as well as `reqwest` in minimal configuration and enables the alredy implemented `PushClient`
 //! - `with_reqwest_blocking`: like `with_reqwest` but including `blocking` instead of `non_blocking`
 //! - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
+//! - `prometheus_client_crate`: enables the functionality of the [prometheus-client](https://crates.io/crates/prometheus-client) crate
 //!
+//! Please be aware that features `with_request` & `with_reqwest_blocking` and `prometheus_crate` & `prometheus_client_crate` are mutually exclusive each.
+//!
+//! ## Integration in your `Cargo.toml`
+//!
+//! Let's say you wanna use it with `reqwest` in an async fashion with the `prometheus` crate, you have to add the following to your `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies]
+//! prometheus_push = { version = "<version>", default-features = false, features = ["with_reqwest", "prometheus_crate"] }
+//! ```
+
+#[cfg(all(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
+compile_error!("Feature 'with_reqwest' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");
+
+#[cfg(all(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
+compile_error!("Feature 'prometheus_crate' and 'prometheus_client_crate' are mutually exclusive and cannot be enabled together");
 
 #[cfg(feature = "blocking")]
 pub mod blocking;
-pub mod error;
 #[cfg(feature = "non_blocking")]
 pub mod non_blocking;
+#[cfg(feature = "prometheus_client_crate")]
+pub mod prometheus_client_crate;
 #[cfg(feature = "prometheus_crate")]
 pub mod prometheus_crate;
-mod utils;
 #[cfg(feature = "with_reqwest")]
-pub mod with_request;
+pub mod with_reqwest;
+
+pub mod error;
+mod utils;
 
 use std::collections::HashMap;
 
@@ -123,25 +130,11 @@ use url::Url;
 
 use crate::error::Result;
 
-/// Push is a trait that defines the interface for the implementation of your own http
-/// client of choice.
-#[async_trait::async_trait]
-pub trait Push {
-    async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
-    async fn push_add(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()>;
-}
-
-/// PushType defines the two types of push requests to the pushgateway.
-enum PushType {
-    Add,
-    All,
-}
-
 /// ConvertMetrics defines the interface for the implementation of your own prometheus logic
 /// to incorporate it into [`MetricsPusher`].
-pub trait ConvertMetrics<MF, C> {
+pub trait ConvertMetrics<MF, C, B> {
     /// metric_families_from converts the given collectors to metric families.
-    fn metric_families_from(&self, collectors: Vec<C>) -> Result<Vec<MF>>;
+    fn metrics_from(&self, collectors: C) -> Result<MF>;
 
     /// create_push_details creates the input arguments for the [`Push`] clients methods.
     fn create_push_details(
@@ -149,6 +142,6 @@ pub trait ConvertMetrics<MF, C> {
         job: &str,
         url: &Url,
         grouping: &HashMap<&str, &str>,
-        metric_families: Vec<MF>,
-    ) -> Result<(Url, Vec<u8>, String)>;
+        metrics: MF,
+    ) -> Result<(Url, B, String)>;
 }

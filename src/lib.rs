@@ -109,6 +109,9 @@
 #[cfg(all(feature = "with_request", feature = "with_reqwest_blocking"))]
 compile_error!("Feature 'with_request' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");
 
+#[cfg(all(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
+compile_error!("Feature 'prometheus_crate' and 'prometheus_client_crate' are mutually exclusive and cannot be enabled together");
+
 #[cfg(feature = "blocking")]
 pub mod blocking;
 #[cfg(feature = "non_blocking")]

@@ -24,13 +24,7 @@ use crate::with_request::PushClient;
 use reqwest::Client;
 
 #[cfg(feature = "with_reqwest_blocking")]
-use crate::blocking::with_request::PushClient;
-#[cfg(feature = "with_reqwest_blocking")]
-use crate::blocking::MetricsPusher;
-#[cfg(feature = "with_reqwest_blocking")]
-use crate::blocking::Push;
-#[cfg(feature = "with_reqwest_blocking")]
-use reqwest::blocking::Client;
+use crate::blocking;
 
 pub struct PrometheusMetricsConverter;
 
@@ -122,8 +116,8 @@ where
 }
 
 #[cfg(feature = "with_reqwest_blocking")]
-pub type PrometheusMetricsPusherBlocking = MetricsPusher<
-    PushClient,
+pub type PrometheusMetricsPusherBlocking = blocking::MetricsPusher<
+    blocking::with_request::PushClient,
     PrometheusMetricsConverter,
     Vec<MetricFamily>,
     Vec<Box<dyn Collector>>,
@@ -131,14 +125,21 @@ pub type PrometheusMetricsPusherBlocking = MetricsPusher<
 >;
 
 #[cfg(feature = "with_reqwest_blocking")]
-impl<P, CM, MF, C, B> MetricsPusher<P, CM, MF, C, B>
+impl<P, CM, MF, C, B> blocking::MetricsPusher<P, CM, MF, C, B>
 where
-    P: Push<B>,
+    P: blocking::Push<B>,
     CM: ConvertMetrics<MF, C, B>,
 {
     /// Creates a new [`MetricsPusher`] with the given [`reqwest::blocking::Client`] client
     /// and the Url of your pushgateway instance.
-    pub fn from(client: Client, url: &Url) -> Result<PrometheusMetricsPusherBlocking> {
-        MetricsPusher::new(PushClient::new(client), PrometheusMetricsConverter, url)
+    pub fn blocking_from(
+        client: reqwest::blocking::Client,
+        url: &Url,
+    ) -> Result<PrometheusMetricsPusherBlocking> {
+        blocking::MetricsPusher::new(
+            blocking::with_request::PushClient::new(client),
+            PrometheusMetricsConverter,
+            url,
+        )
     }
 }

@@ -106,8 +106,8 @@
 //! - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
 //!
 
-#[cfg(all(feature = "with_request", feature = "with_reqwest_blocking"))]
-compile_error!("Feature 'with_request' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");
+#[cfg(all(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
+compile_error!("Feature 'with_reqwest' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");
 
 #[cfg(all(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
 compile_error!("Feature 'prometheus_crate' and 'prometheus_client_crate' are mutually exclusive and cannot be enabled together");
@@ -121,7 +121,7 @@ pub mod prometheus_client_crate;
 #[cfg(feature = "prometheus_crate")]
 pub mod prometheus_crate;
 #[cfg(feature = "with_reqwest")]
-pub mod with_request;
+pub mod with_reqwest;
 
 pub mod error;
 mod utils;

@@ -15,7 +15,7 @@ use crate::non_blocking::MetricsPusher;
 #[cfg(feature = "with_reqwest")]
 use crate::non_blocking::Push;
 #[cfg(feature = "with_reqwest")]
-use crate::with_request::PushClient;
+use crate::with_reqwest::PushClient;
 #[cfg(feature = "with_reqwest")]
 use reqwest::Client;
 
@@ -78,7 +78,7 @@ where
 
 #[cfg(feature = "with_reqwest_blocking")]
 pub type PrometheusClientMetricsPusherBlocking = blocking::MetricsPusher<
-    blocking::with_request::PushClient,
+    blocking::with_reqwest::PushClient,
     PrometheusClientMetricsConverter,
     String,
     Vec<Box<dyn Collector>>,
@@ -93,12 +93,12 @@ where
 {
     /// Creates a new [`MetricsPusher`] with the given [`reqwest::blocking::Client`] client
     /// and the Url of your pushgateway instance.
-    pub fn blocking_from(
+    pub fn from(
         client: reqwest::blocking::Client,
         url: &Url,
     ) -> Result<PrometheusClientMetricsPusherBlocking> {
         blocking::MetricsPusher::new(
-            blocking::with_request::PushClient::new(client),
+            blocking::with_reqwest::PushClient::new(client),
             PrometheusClientMetricsConverter,
             url,
         )

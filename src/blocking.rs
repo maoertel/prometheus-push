@@ -1,5 +1,5 @@
 #[cfg(feature = "with_reqwest_blocking")]
-pub mod with_request;
+pub mod with_reqwest;
 
 use std::collections::HashMap;
 

@@ -18,20 +18,12 @@
 //! ## Example with features `with_reqwest` and `prometheus_crate`
 //!
 //! ```compile_fail
-//! use prometheus::core::Collector;
 //! use prometheus::labels;
-//! use prometheus::proto::MetricFamily;
-//! use prometheus_push::non_blocking::MetricsPusher;
-//! use prometheus_push::prometheus_crate::PrometheusMetricsConverter;
-//! use prometheus_push::with_reqwest::PushClient;
-//! use prometheus_push::MetricsPusher;
+//! use prometheus_push::prometheus_crate::PrometheusMetricsPusher;
 //! use reqwest::Client;
 //! use url::Url;
 //!
-//! pub type PrometheusMetricsPusher =
-//!   MetricsPusher<PushClient, PrometheusMetricsConverter, MetricFamily, Box<dyn Collector>>;
-//!
-//! let push_gateway: Url = <address to your instance>;
+//! let push_gateway: Url = "<address to your instance>";
 //! let client = Client::new();
 //! let metrics_pusher = PrometheusMetricsPusher::from(client, &push_gateway)?;
 //! metrics_pusher
@@ -51,12 +43,9 @@
 //! Basically it is as simple as that.
 //!
 //! ```compile_fail
-//! use prometheus_push::Push;
-//! ...
+//! use prometheus_push::non_blocking::Push;
 //!
-//! pub struct YourClient {
-//!     ...
-//! }
+//! pub struct YourClient;
 //!
 //! #[async_trait::async_trait]
 //! impl Push for YourClient {
@@ -76,7 +65,7 @@
 //! the `ConvertMetrics` trait to inject it into your instance of `MetricsPusher`.
 //!
 //! ```compile_fail
-//! impl ConvertMetrics<YourMetricFamily, Box<dyn YourCollector>> for YourMetricsConverter {
+//! impl ConvertMetrics<Vec<YourMetricFamily>, Vec<Box<dyn YourCollector>>, Vec<u8>> for YourMetricsConverter {
 //!     fn metric_families_from(
 //!         &self,
 //!         collectors: Vec<Box<dyn YourCollector>>,
@@ -104,7 +93,18 @@
 //! - `with_reqwest`: this feature enables the `non_blocking` feature as well as `reqwest` in minimal configuration and enables the alredy implemented `PushClient`
 //! - `with_reqwest_blocking`: like `with_reqwest` but including `blocking` instead of `non_blocking`
 //! - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
+//! - `prometheus_client_crate`: enables the functionality of the [prometheus-client](https://crates.io/crates/prometheus-client) crate
 //!
+//! Please be aware that features `with_request` & `with_reqwest_blocking` and `prometheus_crate` & `prometheus_client_crate` are mutually exclusive each.
+//!
+//! ## Integration in your `Cargo.toml`
+//!
+//! Let's say you wanna use it with `reqwest` in an async fashion with the `prometheus` crate, you have to add the following to your `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies]
+//! prometheus_push = { version = "<version>", default-features = false, features = ["with_reqwest", "prometheus_crate"] }
+//! ```
 
 #[cfg(all(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
 compile_error!("Feature 'with_reqwest' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");

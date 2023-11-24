@@ -15,14 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
-      run: cargo test --verbose --no-default-features --features with_reqwest,prometheus_crate
-
-    - name: Run tests
-      run: cargo test --verbose --no-default-features --features with_reqwest,prometheus_client_crate
-
-    - name: Run tests
-      run: cargo test --verbose --no-default-features --features with_reqwest_blocking,prometheus_crate
-
-    - name: Run tests
-      run: cargo test --verbose --no-default-features --features with_reqwest_blocking,prometheus_client_crate
-
+      run: cargo test --verbose --all-features

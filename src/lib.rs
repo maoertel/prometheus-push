@@ -1,4 +1,6 @@
-//! This crate works as an extension to prometheus crates like [prometheus](https://crates.io/crates/prometheus) to be able to push non-blocking (default)
+//! # Prometheus Push
+//!
+//! `prometheus_push` works as an extension to prometheus crates like [prometheus](https://crates.io/crates/prometheus) to be able to push non-blocking (default)
 //! or blocking to your Prometheus pushgateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your
 //! own http client.
 //!
@@ -8,10 +10,11 @@
 //!
 //! Async functionality is considered the standard in this crate but you can enable the `blocking` feature to get the implementation without async. You
 //! can enable the corresponding blocking `reqwest` implementation with the `with_reqwest_blocking` feature in which case you enable the `blocking`
-//! feature of the `reqwest` crate as well.
+//! feature of the `reqwest` crate.
 //!
 //! In terms of the underlying prometheus functionality you have to implement the `ConvertMetrics` trait or you use the already implemented feature
-//! `prometheus_crate` that leverages the [prometheus](https://crates.io/crates/prometheus) crate.
+//! `prometheus_crate` that leverages the [prometheus](https://crates.io/crates/prometheus) crate
+//! or `prometheus_client_crate` that uses the [prometheus-client](https://crates.io/crates/prometheus-client) crate.
 //!
 //! ## Example with features `with_reqwest` and `prometheus_crate`
 //!
@@ -59,7 +62,7 @@
 //!
 //! ## Implement `ConvertMetrics` yourself
 //!
-//! In case you want to use another promethues client implementation you can implement your own type that implements
+//! In case you want to use another prometheus client implementation you can implement your own type that implements
 //! the `ConvertMetrics` trait to inject it into your instance of `MetricsPusher`.
 //!
 //! ```ignore
@@ -68,7 +71,8 @@
 //!         &self,
 //!         collectors: Vec<Box<dyn YourCollector>>,
 //!     ) -> Result<Vec<YourMetricFamily>> {
-//!         // implement the conversion from your Collectors to your MetricsFamilies
+//!         // implement the conversion from your Collectors to your MetricsFamilies, or whatever
+//!         // your generic `MF` type stands for
 //!     }
 //!
 //!     fn create_push_details(
@@ -130,8 +134,8 @@ use url::Url;
 
 use crate::error::Result;
 
-/// ConvertMetrics defines the interface for the implementation of your own prometheus logic
-/// to incorporate it into [`MetricsPusher`].
+/// `ConvertMetrics` defines the interface for the implementation of your own prometheus logic
+/// to incorporate it into [`non_blocking::MetricsPusher`] or [`blocking::MetricsPusher`].
 pub trait ConvertMetrics<MF, C, B> {
     /// metric_families_from converts the given collectors to metric families.
     fn metrics_from(&self, collectors: C) -> Result<MF>;

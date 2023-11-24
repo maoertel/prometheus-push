@@ -10,14 +10,7 @@ use crate::utils::create_metrics_job_url;
 use crate::utils::PushType;
 use crate::ConvertMetrics;
 
-/// Push is a trait that defines the interface for the implementation of your own http
-/// client of choice.
-pub trait Push<B> {
-    fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
-    fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
-}
-
-/// MetricsPusher is a prometheus pushgateway client that holds information about the
+/// `MetricsPusher` is a prometheus pushgateway client that holds information about the
 /// address of your pushgateway instance and the [`Push`] client that is used to push
 /// metrics to the pushgateway. Furthermore it needs a [`ConvertMetrics`] implementation
 /// that converts the metrics to the format that is used by the pushgateway.
@@ -33,6 +26,13 @@ where
     mf: std::marker::PhantomData<MF>,
     c: std::marker::PhantomData<C>,
     b: std::marker::PhantomData<B>,
+}
+
+/// `Push` is a trait that defines the interface for the implementation of your own http
+/// client of choice.
+pub trait Push<B> {
+    fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
+    fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
 }
 
 impl<P, CM, MF, C, B> MetricsPusher<P, CM, MF, C, B>

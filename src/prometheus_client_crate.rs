@@ -69,7 +69,7 @@ where
 {
     /// Creates a new [`MetricsPusher`] with the given [`Client`] and the [`Url`]
     /// of your pushgateway instance.
-    pub fn from(client: Client, url: &Url) -> Result<PrometheusClientMetricsPusher> {
+    pub fn create(client: Client, url: &Url) -> Result<PrometheusClientMetricsPusher> {
         MetricsPusher::new(
             PushClient::new(client),
             PrometheusClientMetricsConverter,
@@ -95,7 +95,7 @@ where
 {
     /// Creates a new [`MetricsPusher`] with the given [`Client`] and the [`Url`]
     /// of your pushgateway instance.
-    pub fn from(
+    pub fn create(
         client: reqwest::blocking::Client,
         url: &Url,
     ) -> Result<PrometheusClientMetricsPusherBlocking> {

@@ -97,8 +97,6 @@
 //! - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
 //! - `prometheus_client_crate`: enables the functionality of the [prometheus-client](https://crates.io/crates/prometheus-client) crate
 //!
-//! Please be aware that features `with_request` & `with_reqwest_blocking` and `prometheus_crate` & `prometheus_client_crate` are mutually exclusive each.
-//!
 //! ## Integration in your `Cargo.toml`
 //!
 //! Let's say you wanna use it with `reqwest` in an async fashion with the `prometheus` crate, you have to add the following to your `Cargo.toml`:
@@ -107,12 +105,6 @@
 //! [dependencies]
 //! prometheus_push = { version = "<version>", default-features = false, features = ["with_reqwest", "prometheus_crate"] }
 //! ```
-
-#[cfg(all(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-compile_error!("Feature 'with_reqwest' and 'with_reqwest_blocking' are mutually exclusive and cannot be enabled together");
-
-#[cfg(all(feature = "prometheus_crate", feature = "prometheus_client_crate"))]
-compile_error!("Feature 'prometheus_crate' and 'prometheus_client_crate' are mutually exclusive and cannot be enabled together");
 
 #[cfg(feature = "blocking")]
 pub mod blocking;

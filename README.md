@@ -95,8 +95,6 @@ impl ConvertMetrics<Vec<YourMetricFamily>, Vec<Box<dyn YourCollector>>, Vec<u8>>
 - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
 - `prometheus_client_crate`: enables the functionality of the [prometheus-client](https://crates.io/crates/prometheus-client) crate
 
-Please be aware that features `with_request` & `with_reqwest_blocking` and `prometheus_crate` & `prometheus_client_crate` are mutually exclusive each.
-
 ## Integration in your `Cargo.toml`
 
 Let's say you wanna use it with `reqwest` in an async fashion with the `prometheus` crate, you have to add the following to your `Cargo.toml`:

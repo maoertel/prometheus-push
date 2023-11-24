@@ -45,10 +45,10 @@ Basically it is as simple as that.
 ```rust
 use prometheus_push::non_blocking::Push;
 
-pub struct YourClient;
+pub struct YourPushClient;
 
 #[async_trait::async_trait]
-impl Push<Vec<u8>> for PushClient {
+impl Push<Vec<u8>> for YourPushClient {
     async fn push_all(&self, url: &Url, body: Vec<u8>, content_type: &str) -> Result<()> {
         // implement a PUT request with your client with this body and `content_type` in header
     }

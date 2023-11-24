@@ -1,6 +1,6 @@
 [package]
 name = "prometheus_push"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 authors = ["Mathias Oertel <mathias.oertel@pm.me>"]
 description = "Crate to extend prometheus crates with pushgateway support"
@@ -11,7 +11,7 @@ license = "MIT"
 repository = "https://github.com/maoertel/prometheus-push"
 
 [package.metadata.docs.rs]
-features = ["non_blocking", "blocking", "with_reqwest", "with_reqwest_blocking", "prometheus_crate", "prometheus_client_crate"]
+features = ["non_blocking", "with_reqwest", "prometheus_crate"]
 
 [dependencies]
 url = "2.4"

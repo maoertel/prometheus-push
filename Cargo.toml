@@ -11,7 +11,7 @@ license = "MIT"
 repository = "https://github.com/maoertel/prometheus-push"
 
 [package.metadata.docs.rs]
-features = ["blocking", "with_reqwest", "with_reqwest_blocking"]
+features = ["non_blocking", "blocking", "with_reqwest", "with_reqwest_blocking", "prometheus_crate", "prometheus_client_crate"]
 
 [dependencies]
 url = "2.4"

@@ -8,7 +8,7 @@ use url::Url;
 
 pub type Result<T> = std::result::Result<T, PushMetricsError>;
 
-/// PushMetricsError is the crates returned error type
+/// `PushMetricsError` is the crates returned error type
 #[derive(Debug)]
 pub enum PushMetricsError {
     Url(url::ParseError),

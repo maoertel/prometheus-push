@@ -22,6 +22,8 @@ use reqwest::Client;
 #[cfg(feature = "with_reqwest_blocking")]
 use crate::blocking;
 
+/// `PrometheusClientMetricsConverter` is a [`ConvertMetrics`] implementation that converts
+/// the given [`Collector`]s to a [`String`] of metrics that can be pushed to the pushgateway.
 pub struct PrometheusClientMetricsConverter;
 
 impl ConvertMetrics<String, Vec<Box<dyn Collector>>, Vec<u8>> for PrometheusClientMetricsConverter {
@@ -65,7 +67,7 @@ where
     P: Push<B>,
     M: ConvertMetrics<MF, C, B>,
 {
-    /// Creates a new [`MetricsPusher`] with the given [`reqwest::Client`] client and the Url
+    /// Creates a new [`MetricsPusher`] with the given [`Client`] and the [`Url`]
     /// of your pushgateway instance.
     pub fn from(client: Client, url: &Url) -> Result<PrometheusClientMetricsPusher> {
         MetricsPusher::new(
@@ -91,8 +93,8 @@ where
     P: blocking::Push<B>,
     CM: ConvertMetrics<MF, C, B>,
 {
-    /// Creates a new [`MetricsPusher`] with the given [`reqwest::blocking::Client`] client
-    /// and the Url of your pushgateway instance.
+    /// Creates a new [`MetricsPusher`] with the given [`Client`] and the [`Url`]
+    /// of your pushgateway instance.
     pub fn from(
         client: reqwest::blocking::Client,
         url: &Url,

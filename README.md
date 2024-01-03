@@ -1,22 +1,28 @@
 # Prometheus Push
 
-`prometheus_push` works as an extension to prometheus crates like [prometheus](https://crates.io/crates/prometheus) to be able to push non-blocking (default)
-or blocking to your Prometheus pushgateway and with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your
-own http client.
+`prometheus_push` works as an extension to prometheus crates like [prometheus](https://crates.io/crates/prometheus) or 
+[prometheus-client](https://crates.io/crates/prometheus-client) to be able to push non-blocking (default) or blocking to your Prometheus 
+pushgateway with a less dependent setup of `reqwest` (no `openssl` for example) or with an implementation of your own http client.
 
-By default you have to implement the `Push` trait to use it with your choice of http client or you can use the `with_reqwest` feature.
-This feature already implements `Push` in a `PushClient` that leverages `reqwest` under the hood. Reqwest is setup without default features
+If you wanna use it with `reqwest`, `prometheus` or `prometheus-client` crates you literally do not have to implement anything (see examples below).
+
+In its stripped version you have to implement the `Push` trait to use it with your choice of http client or –as said– you can use the `with_reqwest`
+feature. This feature already implements `Push` in a `PushClient` that leverages `reqwest` under the hood. Reqwest is set up without default features
 (minimal set) in this case so it should not interfere with your own applications reqwest setup (e.g. `rust-tls`).
 
-Async functionality is considered the standard in this crate but you can enable the `blocking` feature to get the implementation without async. You
-can enable the corresponding blocking `reqwest` implementation with the `with_reqwest_blocking` feature in which case you enable the `blocking`
-feature of the `reqwest` crate.
+Async functionality (feature `non_blocking`) is considered the standard in this crate but you can enable the `blocking` feature to get the
+implementation without async. You can enable the corresponding blocking `reqwest` implementation with the `with_reqwest_blocking` feature in which case 
+you enable the `blocking` feature of the `reqwest` crate.
 
 In terms of the underlying prometheus functionality you have to implement the `ConvertMetrics` trait or you use the already implemented feature
 `prometheus_crate` that leverages the [prometheus](https://crates.io/crates/prometheus) crate
 or `prometheus_client_crate` that uses the [prometheus-client](https://crates.io/crates/prometheus-client) crate.
 
-## Example with features `with_reqwest` and `prometheus_crate`
+## Examples
+
+### Scenario when using `reqwest` and `prometheus` crates
+
+`with_reqwest` and `prometheus_crate`
 
 ```rust
 use prometheus::labels;
@@ -24,16 +30,21 @@ use prometheus_push::prometheus_crate::PrometheusMetricsPusher;
 use reqwest::Client;
 use url::Url;
 
-let push_gateway: Url = "<address to your instance>";
-let client = Client::new();
-let metrics_pusher = PrometheusMetricsPusher::from(client, &push_gateway)?;
-metrics_pusher
-  .push_all(
-    "<your push jobs name>",
-    &labels! { "<label_name>" => "<label_value>" },
-    prometheus::gather(),
-  )
-  .await?;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let push_gateway: Url = Url::parse("<address to pushgateway>")?;
+    let client = Client::new();
+    let metrics_pusher = PrometheusMetricsPusher::from(client, &push_gateway)?;
+    metrics_pusher
+        .push_all(
+            "<your push jobs name>",
+            &labels! { "<label_name>" => "<label_value>" },
+            prometheus::gather(),
+        )
+        .await?;
+
+    Ok(())
+}
 ```
 
 ## Implement `Push` yourself
@@ -97,11 +108,18 @@ impl ConvertMetrics<Vec<YourMetricFamily>, Vec<Box<dyn YourCollector>>, Vec<u8>>
 
 ## Integration in your `Cargo.toml`
 
-Let's say you wanna use it with `reqwest` in an async fashion with the `prometheus` crate, you have to add the following to your `Cargo.toml`:
+### Scenario 1: `reqwest` and `prometheus` crate
 
 ```toml
 [dependencies]
 prometheus_push = { version = "<version>", default-features = false, features = ["with_reqwest", "prometheus_crate"] }
+```
+
+### Scenario 2: `reqwest` and `prometheus-client` crate
+
+```toml
+[dependencies]
+prometheus_push = { version = "<version>", default-features = false, features = ["with_reqwest", "prometheus_client_crate"] }
 ```
 
 ## License

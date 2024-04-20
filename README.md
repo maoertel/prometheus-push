@@ -219,8 +219,6 @@ impl ConvertMetrics<Vec<YourMetricFamily>, Vec<Box<dyn YourCollector>>, Vec<u8>>
 - `prometheus_crate`: enables the functionality of the [prometheus](https://crates.io/crates/prometheus) crate
 - `prometheus_client_crate`: enables the functionality of the [prometheus-client](https://crates.io/crates/prometheus-client) crate
 
-## Integration in your `Cargo.toml`
-
 ## License
 
 [MIT](./LICENSE-MIT)

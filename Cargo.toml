@@ -12,7 +12,6 @@ repository = "https://github.com/maoertel/prometheus-push"
 
 [dependencies]
 url = "2.5"
-async-trait = { version = "0.1", optional = true }
 prometheus = {version = "0.13", optional = true }
 prometheus-client = { version = "0.22", default-features = false, optional = true }
 reqwest = { version = "0.12", default-features = false, optional = true }
@@ -20,7 +19,7 @@ log = { version = "0.4", default-features = false, optional = true }
 
 [features]
 default = ["non_blocking"]
-non_blocking = ["async-trait"]
+non_blocking = []
 blocking = []
 prometheus_crate = ["prometheus"]
 prometheus_client_crate = ["prometheus-client"]

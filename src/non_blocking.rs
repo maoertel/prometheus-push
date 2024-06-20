@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::future::Future;
 
 use url::Url;
 
@@ -27,10 +28,14 @@ where
 
 /// `Push` is a trait that defines the interface for the implementation of your own http
 /// client of choice.
-#[async_trait::async_trait]
 pub trait Push<B> {
-    async fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
-    async fn push_add(&self, url: &Url, body: B, content_type: &str) -> Result<()>;
+    fn push_all(
+        &self,
+        url: &Url,
+        body: B,
+        content_type: &str,
+    ) -> impl Future<Output = Result<()>> + Send;
+    fn push_add(&self, url: &Url, body: B, content_type: &str) -> impl Future<Output = Result<()>>;
 }
 
 impl<P, CM, MF, C, B> MetricsPusher<P, CM, MF, C, B>

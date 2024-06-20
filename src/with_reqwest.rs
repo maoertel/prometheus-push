@@ -23,7 +23,6 @@ impl PushClient {
     }
 }
 
-#[async_trait::async_trait]
 impl<B: Into<Body> + Send + Sync + 'static> Push<B> for PushClient {
     async fn push_all(&self, url: &Url, body: B, content_type: &str) -> Result<()> {
         let response = &self

@@ -1,30 +1,31 @@
-use std::fmt;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
-#[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-use reqwest::StatusCode;
-#[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-use url::Url;
+use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, PushMetricsError>;
 
 /// `PushMetricsError` is the crates returned error type
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum PushMetricsError {
-    Url(url::ParseError),
+    #[error("error parsing url: {0}")]
+    Url(#[from] url::ParseError),
+    #[error("pushed metric already contains label '{0}'")]
     AlreadyContainsLabel(String),
+    #[error("labels and job name must not contain '/': '{0}'")]
     SlashInName(String),
     #[cfg(feature = "prometheus_crate")]
-    Prometheus(prometheus::Error),
+    #[error("prometheus error: {0}")]
+    Prometheus(#[from] prometheus::Error),
     #[cfg(feature = "prometheus_client_crate")]
-    PrometheusClient(std::fmt::Error),
+    #[error("prometheus client error: {0}")]
+    PrometheusClient(#[from] std::fmt::Error),
     #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
+    #[error("unexpected status code while pushing to url")]
     Response(String),
     #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-    Reqwest(reqwest::Error),
+    #[error("reqwest error: {0}")]
+    Reqwest(#[from] reqwest::Error),
 }
-
-impl std::error::Error for PushMetricsError {}
 
 impl PushMetricsError {
     #[cfg(feature = "prometheus_crate")]
@@ -44,7 +45,7 @@ impl PushMetricsError {
     }
 
     #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-    pub(crate) fn response(status_code: &StatusCode, url: &Url) -> Self {
+    pub(crate) fn response(status_code: &reqwest::StatusCode, url: &url::Url) -> Self {
         PushMetricsError::Response(format!(
             "unexpected status code {status_code} while pushing to {url}",
         ))
@@ -65,50 +66,5 @@ impl<'a> LabelType<'a> {
             LabelType::Job => String::from("a job label"),
             LabelType::Grouping(label) => format!("grouping label with value '{label}'"),
         }
-    }
-}
-
-impl fmt::Display for PushMetricsError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            PushMetricsError::Url(e) => std::fmt::Display::fmt(e, f),
-            PushMetricsError::AlreadyContainsLabel(message) => std::fmt::Display::fmt(message, f),
-            PushMetricsError::SlashInName(message) => std::fmt::Display::fmt(message, f),
-            #[cfg(feature = "prometheus_crate")]
-            PushMetricsError::Prometheus(e) => std::fmt::Display::fmt(e, f),
-            #[cfg(feature = "prometheus_client_crate")]
-            PushMetricsError::PrometheusClient(e) => std::fmt::Display::fmt(e, f),
-            #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-            PushMetricsError::Response(e) => std::fmt::Display::fmt(e, f),
-            #[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-            PushMetricsError::Reqwest(e) => std::fmt::Display::fmt(e, f),
-        }
-    }
-}
-
-impl From<url::ParseError> for PushMetricsError {
-    fn from(error: url::ParseError) -> Self {
-        PushMetricsError::Url(error)
-    }
-}
-
-#[cfg(feature = "prometheus_crate")]
-impl From<prometheus::Error> for PushMetricsError {
-    fn from(error: prometheus::Error) -> Self {
-        PushMetricsError::Prometheus(error)
-    }
-}
-
-#[cfg(feature = "prometheus_client_crate")]
-impl From<std::fmt::Error> for PushMetricsError {
-    fn from(error: std::fmt::Error) -> Self {
-        PushMetricsError::PrometheusClient(error)
-    }
-}
-
-#[cfg(any(feature = "with_reqwest", feature = "with_reqwest_blocking"))]
-impl From<reqwest::Error> for PushMetricsError {
-    fn from(error: reqwest::Error) -> Self {
-        PushMetricsError::Reqwest(error)
     }
 }

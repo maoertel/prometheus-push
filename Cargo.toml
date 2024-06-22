@@ -12,6 +12,7 @@ repository = "https://github.com/maoertel/prometheus-push"
 
 [dependencies]
 url = "2.5"
+thiserror = "1.0"
 prometheus = {version = "0.13", optional = true }
 prometheus-client = { version = "0.22", default-features = false, optional = true }
 reqwest = { version = "0.12", default-features = false, optional = true }

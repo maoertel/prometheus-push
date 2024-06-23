@@ -197,7 +197,7 @@ mod test {
         let (pushgateway_mock, push_gateway_address, job, grouping) =
             create_push_gateway_mock(&mut server);
 
-        // And a nonblocking prometheus metrics pusher
+        // And a blocking prometheus metrics pusher
         let metrics_pusher =
             PrometheusClientMetricsPusherBlocking::create(Client::new(), &push_gateway_address)
                 .unwrap();

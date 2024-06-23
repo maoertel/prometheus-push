@@ -146,3 +146,110 @@ where
         )
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use mockito::Mock;
+    use mockito::Server;
+    use mockito::ServerGuard;
+    use prometheus::labels;
+    use prometheus::proto::MetricFamily;
+    use prometheus::Counter;
+    use prometheus::Encoder;
+    use prometheus::Opts;
+    use prometheus::ProtobufEncoder;
+    use prometheus_crate::PrometheusMetricsPusher;
+    use prometheus_crate::PrometheusMetricsPusherBlocking;
+    use url::Url;
+
+    use crate::prometheus_crate;
+
+    fn create_metrics(name: &str) -> (Vec<u8>, Vec<MetricFamily>) {
+        let counter_opts = Opts::new(name, "test counter help");
+        let counter = Counter::with_opts(counter_opts).unwrap();
+        prometheus::register(Box::new(counter.clone())).unwrap();
+        counter.inc();
+
+        let encoder = ProtobufEncoder::new();
+        let metric_families = prometheus::gather();
+        let mut metrics = vec![];
+        encoder.encode(&metric_families, &mut metrics).unwrap();
+
+        (metrics, metric_families)
+    }
+
+    fn create_push_gateway_mock(
+        server: &mut ServerGuard,
+        metrics: Vec<u8>,
+    ) -> (Mock, Url, &str, HashMap<&str, &str>) {
+        let push_gateway_address = Url::parse(&server.url()).unwrap();
+        let job = "prometheus_crate_job";
+        let label_name = "kind";
+        let label_value = "test";
+        let path = format!("/metrics/job/{job}/{label_name}/{label_value}");
+        let grouping = labels! { label_name => label_value };
+
+        let pushgateway_mock = server
+            .mock("PUT", &*path)
+            .with_status(200)
+            .match_header("content-type", ProtobufEncoder::new().format_type())
+            .match_body(mockito::Matcher::from(metrics))
+            .create();
+
+        (pushgateway_mock, push_gateway_address, job, grouping)
+    }
+
+    #[cfg(feature = "with_reqwest_blocking")]
+    #[test]
+    fn test_push_all_blocking_reqwest_prometheus_crate() {
+        // Given I have a counter metric
+        let (metrics, metric_families) = create_metrics("test_counter");
+
+        // And a push gateway and a job
+        let mut server = Server::new();
+        let (pushgateway_mock, push_gateway_address, job, grouping) =
+            create_push_gateway_mock(&mut server, metrics);
+
+        // And a blocking prometheus metrics pusher
+        let metrics_pusher = PrometheusMetricsPusherBlocking::from(
+            reqwest::blocking::Client::new(),
+            &push_gateway_address,
+        )
+        .unwrap();
+
+        // When I push all metrics to the push gateway
+        metrics_pusher
+            .push_all(job, &grouping, metric_families)
+            .expect("Failed to push metrics");
+
+        // Then the metrics are received by the push_gateway
+        pushgateway_mock.expect(1).assert();
+    }
+
+    #[cfg(feature = "with_reqwest")]
+    #[tokio::test]
+    async fn test_push_all_non_blocking_reqwest_prometheus_crate() {
+        // Given I have a counter metric
+        let (metrics, metric_families) = create_metrics("test_counter_async");
+
+        // And a push gateway and a job
+        let mut server = Server::new_async().await;
+        let (pushgateway_mock, push_gateway_address, job, grouping) =
+            create_push_gateway_mock(&mut server, metrics);
+
+        // And a nonblocking prometheus metrics pusher
+        let metrics_pusher =
+            PrometheusMetricsPusher::from(reqwest::Client::new(), &push_gateway_address).unwrap();
+
+        // When I push all metrics to the push gateway
+        metrics_pusher
+            .push_all(job, &grouping, metric_families)
+            .await
+            .expect("Failed to push metrics");
+
+        // Then the metrics are received by the push_gateway
+        pushgateway_mock.expect(1).assert();
+    }
+}

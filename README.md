@@ -104,7 +104,7 @@ use url::Url;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let push_gateway: Url = Url::parse("<address to pushgateway>")?;
     let client = Client::new();
-    let metrics_pusher = PrometheusClientMetricsPusher::from(client, &push_gateway)?;
+    let metrics_pusher = PrometheusClientMetricsPusher::create(client, &push_gateway)?;
     let grouping: HashMap<&str, &str> = HashMap::from([("<label_name>", "<label_value>")]);
     let mut metrics = String::new();
     encode(&mut metrics, &registry)?;
@@ -139,7 +139,7 @@ use url::Url;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let push_gateway: Url = Url::parse("<address to pushgateway>")?;
     let client = Client::new();
-    let metrics_pusher = PrometheusClientMetricsPusherBlocking::from(client, &push_gateway)?;
+    let metrics_pusher = PrometheusClientMetricsPusherBlocking::create(client, &push_gateway)?;
     let grouping: HashMap<&str, &str> = HashMap::from([("<label_name>", "<label_value>")]);
     let mut metrics = String::new();
     encode(&mut metrics, &registry)?;

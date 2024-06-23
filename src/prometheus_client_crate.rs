@@ -106,3 +106,88 @@ where
         )
     }
 }
+
+#[cfg(test)]
+#[cfg(feature = "with_reqwest")]
+mod test {
+    use std::collections::HashMap;
+
+    use mockito::Server;
+    use prometheus_client::encoding::text::encode;
+    use prometheus_client::encoding::EncodeLabelSet;
+    use prometheus_client::encoding::EncodeLabelValue;
+    use prometheus_client::metrics::counter::Counter;
+    use prometheus_client::metrics::family::Family;
+    use prometheus_client::registry::Registry;
+    use prometheus_client_crate::PrometheusClientMetricsPusher;
+    use reqwest::Client;
+    use url::Url;
+
+    use crate::prometheus_client_crate;
+
+    #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelValue)]
+    enum Method {
+        #[allow(clippy::upper_case_acronyms)]
+        GET,
+    }
+
+    #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+    struct Labels {
+        // Use your own enum types to represent label values.
+        method: Method,
+        // Or just a plain string.
+        path: String,
+    }
+
+    #[tokio::test]
+    async fn test_push_all_non_blocking_reqwest_prometheus_client_crate() {
+        // Given I have a counter metric
+        let mut registry = <Registry>::default();
+        let http_requests = Family::<Labels, Counter>::default();
+        registry.register(
+            "http_requests",
+            "Number of HTTP requests received",
+            http_requests.clone(),
+        );
+        http_requests
+            .get_or_create(&Labels { method: Method::GET, path: "/metrics".to_string() })
+            .inc();
+
+        let mut metrics = String::new();
+        encode(&mut metrics, &registry).unwrap();
+
+        let expected = "# HELP http_requests Number of HTTP requests received.\n".to_owned()
+            + "# TYPE http_requests counter\n"
+            + "http_requests_total{method=\"GET\",path=\"/metrics\"} 1\n"
+            + "# EOF\n";
+
+        let mut server = Server::new_async().await;
+        let push_gateway_address = Url::parse(&server.url()).unwrap();
+        let job = "prometheus_client_crate_job";
+        let label_name = "kind";
+        let label_value = "test";
+        let path = format!("/metrics/job/{job}/{label_name}/{label_value}");
+
+        let grouping: HashMap<&str, &str> = HashMap::from([(label_name, label_value)]);
+
+        let pushgateway_mock = server
+            .mock("PUT", &*path)
+            .with_status(200)
+            .match_header("content-type", "text/plain")
+            .match_body(mockito::Matcher::from(&*expected))
+            .create();
+
+        // And a nonblocking prometheus metrics pusher
+        let metrics_pusher =
+            PrometheusClientMetricsPusher::create(Client::new(), &push_gateway_address).unwrap();
+
+        // When I push all metrics to the push gateway
+        metrics_pusher
+            .push_all(job, &grouping, metrics)
+            .await
+            .expect("Failed to push metrics");
+
+        // Then the metrics are received by the push_gateway
+        pushgateway_mock.expect(1).assert();
+    }
+}

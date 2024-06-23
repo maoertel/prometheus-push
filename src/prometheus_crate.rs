@@ -146,3 +146,63 @@ where
         )
     }
 }
+
+#[cfg(test)]
+#[cfg(feature = "with_reqwest")]
+mod test {
+    use mockito::Server;
+    use prometheus::labels;
+    use prometheus::Counter;
+    use prometheus::Encoder;
+    use prometheus::Opts;
+    use prometheus::ProtobufEncoder;
+    use prometheus_crate::PrometheusMetricsPusher;
+    use reqwest::Client;
+    use url::Url;
+
+    use crate::prometheus_crate;
+
+    #[tokio::test]
+    async fn test_push_all_non_blocking_reqwest_prometheus_crate() {
+        // Given I have a counter metric
+        let counter_opts = Opts::new("test_counter", "test counter help");
+        let counter = Counter::with_opts(counter_opts).unwrap();
+        prometheus::register(Box::new(counter.clone())).unwrap();
+        counter.inc();
+
+        let metric_families = prometheus::gather();
+        let mut metrics = vec![];
+
+        // A push gateway and a job
+        let mut server = Server::new_async().await;
+        server.reset();
+        let push_gateway_address = Url::parse(&server.url()).unwrap();
+        let job = "prometheus_crate_job";
+        let label_name = "kind";
+        let label_value = "test";
+        let path = format!("/metrics/job/{job}/{label_name}/{label_value}");
+
+        let encoder = ProtobufEncoder::new();
+        encoder.encode(&metric_families, &mut metrics).unwrap();
+
+        let pushgateway_mock = server
+            .mock("PUT", &*path)
+            .with_status(200)
+            .match_header("content-type", encoder.format_type())
+            .match_body(mockito::Matcher::from(metrics))
+            .create();
+
+        // And a nonblocking prometheus metrics pusher
+        let metrics_pusher =
+            PrometheusMetricsPusher::from(Client::new(), &push_gateway_address).unwrap();
+
+        // When I push all metrics to the push gateway
+        metrics_pusher
+            .push_all(job, &labels! { label_name => label_value }, metric_families)
+            .await
+            .expect("Failed to push metrics");
+
+        // Then the metrics are received by the push_gateway
+        pushgateway_mock.expect(1).assert();
+    }
+}

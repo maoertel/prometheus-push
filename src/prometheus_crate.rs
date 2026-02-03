@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 
-use prometheus::core::Collector;
-use prometheus::proto::MetricFamily;
 use prometheus::Encoder;
 use prometheus::ProtobufEncoder;
 use prometheus::Registry;
+use prometheus::core::Collector;
+use prometheus::proto::MetricFamily;
 use url::Url;
 
+use crate::ConvertMetrics;
 use crate::error::LabelType;
 use crate::error::PushMetricsError;
 use crate::error::Result;
 use crate::utils::build_url;
 use crate::utils::validate;
-use crate::ConvertMetrics;
 
 #[cfg(feature = "with_reqwest")]
 use crate::non_blocking::MetricsPusher;
@@ -71,18 +71,18 @@ impl PrometheusMetricsConverter {
         for metric_family in metric_families {
             for metric in metric_family.get_metric() {
                 for label_pair in metric.get_label() {
-                    let label_name = label_pair.get_name();
+                    let label_name = label_pair.name();
 
                     if LABEL_NAME_JOB == label_name {
                         return Err(PushMetricsError::contains_label(
-                            metric_family.get_name(),
+                            metric_family.name(),
                             LabelType::Job,
                         ));
                     }
 
                     if grouping.contains_key(label_name) {
                         return Err(PushMetricsError::contains_label(
-                            metric_family.get_name(),
+                            metric_family.name(),
                             LabelType::Grouping(label_name),
                         ));
                     }
@@ -154,12 +154,12 @@ mod test {
     use mockito::Mock;
     use mockito::Server;
     use mockito::ServerGuard;
-    use prometheus::labels;
-    use prometheus::proto::MetricFamily;
     use prometheus::Counter;
     use prometheus::Encoder;
     use prometheus::Opts;
     use prometheus::ProtobufEncoder;
+    use prometheus::labels;
+    use prometheus::proto::MetricFamily;
     use prometheus_crate::PrometheusMetricsPusher;
     use prometheus_crate::PrometheusMetricsPusherBlocking;
     use url::Url;

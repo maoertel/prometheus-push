@@ -1,14 +1,14 @@
+use reqwest::StatusCode;
 use reqwest::blocking::Body;
 use reqwest::blocking::Client;
 use reqwest::blocking::Response;
 use reqwest::header::CONTENT_TYPE;
-use reqwest::StatusCode;
 use url::Url;
 
 use crate::blocking::Push;
 use crate::error::Result;
-use crate::utils::handle_response;
 use crate::utils::Respond;
+use crate::utils::handle_response;
 
 /// `PushClient` is a wrapper for a blocking `reqwest` http [`Client`] that implements
 /// the [`Push`] trait.

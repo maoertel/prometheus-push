@@ -1,7 +1,7 @@
 [package]
 name = "prometheus_push"
 version = "0.4.5"
-edition = "2021"
+edition = "2024"
 authors = ["Mathias Oertel <mathias.oertel@pm.me>"]
 description = "Crate to extend prometheus crates with pushgateway support"
 documentation = "https://docs.rs/prometheus_push"
@@ -12,15 +12,15 @@ repository = "https://github.com/maoertel/prometheus-push"
 
 [dependencies]
 url = "2.5"
-thiserror = "1.0"
-prometheus = {version = "0.13", optional = true }
-prometheus-client = { version = "0.22", default-features = false, optional = true }
-reqwest = { version = "0.12", default-features = false, optional = true }
+thiserror = "2.0"
+prometheus = { version = "0.14", optional = true }
+prometheus-client = { version = "0.24", default-features = false, optional = true }
+reqwest = { version = "0.13", default-features = false, optional = true }
 log = { version = "0.4", default-features = false, optional = true }
 
 [dev-dependencies]
-tokio = { version = "1.0", features = ["full"] }
-mockito = "1.4"
+tokio = { version = "1.49", features = ["full"] }
+mockito = "1.7"
 
 [features]
 default = ["non_blocking"]

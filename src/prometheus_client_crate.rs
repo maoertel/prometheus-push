@@ -5,10 +5,10 @@ use prometheus_client::encoding::text::encode;
 use prometheus_client::registry::Registry;
 use url::Url;
 
+use crate::ConvertMetrics;
 use crate::error::Result;
 use crate::utils::build_url;
 use crate::utils::validate;
-use crate::ConvertMetrics;
 
 #[cfg(feature = "with_reqwest")]
 use crate::non_blocking::MetricsPusher;
@@ -114,9 +114,9 @@ mod test {
     use mockito::Mock;
     use mockito::Server;
     use mockito::ServerGuard;
-    use prometheus_client::encoding::text::encode;
     use prometheus_client::encoding::EncodeLabelSet;
     use prometheus_client::encoding::EncodeLabelValue;
+    use prometheus_client::encoding::text::encode;
     use prometheus_client::metrics::counter::Counter;
     use prometheus_client::metrics::family::Family;
     use prometheus_client::registry::Registry;

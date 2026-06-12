@@ -19,7 +19,7 @@ reqwest = { version = "0.13", default-features = false, optional = true }
 log = { version = "0.4", default-features = false, optional = true }
 
 [dev-dependencies]
-tokio = { version = "1.49", features = ["full"] }
+tokio = { version = "1.52", features = ["full"] }
 mockito = "1.7"
 
 [features]
